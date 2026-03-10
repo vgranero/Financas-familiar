@@ -1070,15 +1070,15 @@ function PrintReport({ txs, pat, T, fmt, fmtShort, MONTH_NAMES, competencia }) {
             <thead><tr>
               {["Mês","Receitas","Gastos","Investimentos","Saldo"].map(h=><th key={h} style={{...th,textAlign:h==="Mês"?"left":"right"}}>{h}</th>)}
             </tr></thead>
-            <tbody>{monthData.map(d=>{const s=d.rec-d.gas-d.inv;return(
+            <tbody>{monthData.map(d=>(
               <tr key={d.m}>
                 <td style={{...td0,fontWeight:600}}>{MONTH_NAMES[+d.m.slice(-2)-1]+"/26"}</td>
                 <td style={{...td0,textAlign:"right",fontFamily:JB,color:MG}}>{fmtShort(d.rec)}</td>
                 <td style={{...td0,textAlign:"right",fontFamily:JB,color:MR}}>{fmtShort(d.gas)}</td>
                 <td style={{...td0,textAlign:"right",fontFamily:JB,color:MB2}}>{fmtShort(d.inv)}</td>
-                <td style={{...td0,textAlign:"right",fontFamily:JB,color:s>=0?MG:MR,fontWeight:700}}>{fmtShort(s)}</td>
-              </tr>);
-            })}</tbody>
+                <td style={{...td0,textAlign:"right",fontFamily:JB,color:(d.rec-d.gas-d.inv)>=0?MG:MR,fontWeight:700}}>{fmtShort(d.rec-d.gas-d.inv)}</td>
+              </tr>
+            ))}</tbody>
           </table>
         </div>
 
