@@ -581,7 +581,7 @@ function LineChart(props) {
   );
 }
 
-function PatrimonioView({ onAddAtivo }) {
+function PatrimonioView({ onAddAtivo, isMobile }) {
   const [pat, setPat] = useState(() => {
     try { const s = localStorage.getItem("financas_pat"); return s ? JSON.parse(s) : PATRIMONIO_SEED; } catch { return PATRIMONIO_SEED; }
   });
@@ -652,7 +652,7 @@ function PatrimonioView({ onAddAtivo }) {
     </div>
 
     {/* KPIs topo */}
-    <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginBottom:14}}>
+    <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr 1fr":"repeat(4,1fr)",gap:10,marginBottom:14}}>
       {[
         { label:"Patrimônio Bruto", val:totalGeral, color:T.green, icon:"◈" },
         { label:"Dívidas Ativas", val:totalDividas, color:T.red, icon:"↓" },
@@ -678,7 +678,7 @@ function PatrimonioView({ onAddAtivo }) {
 
     {/* ── RESUMO ── */}
     {secao==="resumo"&&<>
-      <div style={{display:"grid",gridTemplateColumns:"1.5fr 1fr",gap:12}}>
+      <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1.5fr 1fr",gap:12}}>
         <div style={card}>
           <div style={{fontSize:13,fontWeight:700,marginBottom:14}}>Composição do Patrimônio</div>
           {[
@@ -766,7 +766,7 @@ function PatrimonioView({ onAddAtivo }) {
         {pat.previdencia.map(p=>(
           <div key={p.id} style={{background:T.surface,border:`1px solid ${T.border}`,borderRadius:12,padding:16,marginBottom:12}}>
             <div style={{fontSize:14,fontWeight:700,marginBottom:12}}>{p.nome}</div>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12,marginBottom:12}}>
+            <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr 1fr":"1fr 1fr 1fr",gap:10,marginBottom:12}}>
               <div style={{background:T.card,borderRadius:8,padding:10}}>
                 <div style={{fontSize:9,color:T.muted,textTransform:"uppercase",letterSpacing:.6}}>Seu investimento</div>
                 <div style={{fontSize:16,fontWeight:800,color:T.green,fontFamily:"'JetBrains Mono',monospace",marginTop:4}}>{fmt(p.valor_proprio)}</div>
@@ -815,7 +815,7 @@ function PatrimonioView({ onAddAtivo }) {
                 <button style={{...btnS,background:T.redBg,color:T.red,padding:"3px 8px",fontSize:11}} onClick={()=>deleteImovel(im.id)}>✕</button>
               </div>
             </div>
-            <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10}}>
+            <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr 1fr":"repeat(3,1fr)",gap:10}}>
               <div style={{background:T.card,borderRadius:8,padding:10}}>
                 <div style={{fontSize:9,color:T.muted,textTransform:"uppercase",letterSpacing:.6}}>Valor de Mercado</div>
                 <div style={{fontSize:17,fontWeight:800,color:T.green,fontFamily:"'JetBrains Mono',monospace",marginTop:4}}>{fmt(im.valor_mercado)}</div>
@@ -870,7 +870,7 @@ function PatrimonioView({ onAddAtivo }) {
                 <button style={{...btnS,background:T.redBg,color:T.red,padding:"3px 8px",fontSize:11}} onClick={()=>deleteVeiculo(ve.id)}>✕</button>
               </div>
             </div>
-            <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10}}>
+            <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr 1fr":"repeat(3,1fr)",gap:10}}>
               <div style={{background:T.card,borderRadius:8,padding:10}}>
                 <div style={{fontSize:9,color:T.muted,textTransform:"uppercase",letterSpacing:.6}}>Valor de Mercado</div>
                 <div style={{fontSize:17,fontWeight:800,color:T.green,fontFamily:"'JetBrains Mono',monospace",marginTop:4}}>{fmt(ve.valor_mercado)}</div>
@@ -1209,7 +1209,7 @@ function App(){
   const card={background:T.card,border:`1px solid ${T.border}`,borderRadius:16,padding:20};
 
   return(<>
-    <div style={{fontFamily:"'Sora',sans-serif",minHeight:"100vh",background:T.bg,color:T.text,display:"flex"}}>
+    <div style={{fontFamily:"'Sora',sans-serif",minHeight:"100vh",background:T.bg,color:T.text,display:"flex",overflowX:"hidden",maxWidth:"100vw",position:"relative"}}>
 
       {/* ── DESKTOP SIDEBAR ── */}
       {!isMobile&&<aside style={{width:sideOpen?200:60,background:T.surface,borderRight:`1px solid ${T.border}`,display:"flex",flexDirection:"column",position:"fixed",top:0,left:0,bottom:0,zIndex:50,transition:"width .2s ease",overflow:"hidden"}}>
@@ -1557,7 +1557,7 @@ function App(){
             <button style={{...btnS,background:uploadMode==="foto"?T.accent:"transparent",color:uploadMode==="foto"?"#fff":T.muted,border:`1.5px solid ${uploadMode==="foto"?T.accent:T.border}`,padding:"8px 20px",fontSize:13,fontWeight:uploadMode==="foto"?700:400}} onClick={()=>setUploadMode("foto")}>📷 Foto / Print</button>
           </div>
 
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
+          <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1fr 1fr",gap:14}}>
             <div style={card}>
               {uploadMode==="pdf"?(
                 <div style={{border:`2px dashed ${T.border}`,borderRadius:12,padding:36,textAlign:"center",cursor:"pointer"}}
