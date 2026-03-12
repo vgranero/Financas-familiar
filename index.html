@@ -64,6 +64,9 @@ select option{background:#13161f}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script>
+window.onerror = function(msg, src, line, col, err) {
+  document.getElementById('root').innerHTML = '<div style="color:#f0556a;padding:20px;font-family:monospace;font-size:11px;white-space:pre-wrap;background:#0c0e14;min-height:100vh;">RUNTIME ERROR L'+line+':'+col+'\n'+msg+'\n'+(err&&err.stack?err.stack:'')+'</div>';
+};
 window.addEventListener('load', function() {
   var s = document.createElement('script');
   s.src = 'https://unpkg.com/@babel/standalone@7.24.0/babel.min.js';
@@ -73,8 +76,11 @@ window.addEventListener('load', function() {
       var compiled = Babel.transform(src, { presets: ['react'], sourceType: 'script' }).code;
       new Function('React','ReactDOM', compiled)(React, ReactDOM);
     } catch(e) {
-      document.getElementById('root').innerHTML = '<div style="color:#f0556a;padding:20px;font-family:monospace;font-size:11px;white-space:pre-wrap;background:#0c0e14;min-height:100vh;">Erro: ' + e.message + '</div>';
+      document.getElementById('root').innerHTML = '<div style="color:#f0556a;padding:20px;font-family:monospace;font-size:11px;white-space:pre-wrap;background:#0c0e14;min-height:100vh;">COMPILE ERROR:\n' + e.message + '</div>';
     }
+  };
+  s.onerror = function() {
+    document.getElementById('root').innerHTML = '<div style="color:#f0556a;padding:20px;font-family:monospace;font-size:11px;background:#0c0e14;min-height:100vh;">Erro: falha ao carregar Babel. Verifique sua conexão.</div>';
   };
   document.head.appendChild(s);
 });
