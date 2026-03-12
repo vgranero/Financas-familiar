@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
 <meta name="theme-color" content="#0c0e14"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
@@ -16,42 +16,12 @@ body{background:#0c0e14;font-family:'Sora',sans-serif;}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:#232840;border-radius:99px}
 input,select,button{font-family:'Sora',sans-serif;}
-*{-webkit-tap-highlight-color:transparent;}
-@media(max-width:768px){
-  table{font-size:10px;}
-  th,td{padding:4px 3px!important;}
-  body{overscroll-behavior-y:none;}
-}
+@media(max-width:480px){aside{width:52px!important;}main{margin-left:52px!important;padding:12px!important;}}
 input::placeholder{color:#6b728f}
 select option{background:#13161f}
 .spinner{width:40px;height:40px;border:3px solid rgba(77,124,246,0.2);border-top-color:#4d7cf6;border-radius:50%;animation:spin 1s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg)}}
-
-    /* ═══════════════════════════════════════════
-       PRINT / PDF STYLES
-       ═══════════════════════════════════════════ */
-    @media print {
-      * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-
-      body { margin:0; padding:0; background:#0c0e14 !important; }
-
-      /* Hide all interactive app UI */
-      aside, nav, button, select, input,
-      header, .no-print { display: none !important; }
-
-      /* Hide the main app */
-      main { display: none !important; }
-
-      /* Show print report */
-      #print-report { display: block !important; }
-
-      @page {
-        size: A4 portrait;
-        margin: 0;
-      }
-    }
-
-    </style>
+</style>
 </head>
 <body>
 <div id="root">
@@ -64,9 +34,6 @@ select option{background:#13161f}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script>
-window.onerror = function(msg, src, line, col, err) {
-  document.getElementById('root').innerHTML = '<div style="color:#f0556a;padding:20px;font-family:monospace;font-size:11px;white-space:pre-wrap;background:#0c0e14;min-height:100vh;">RUNTIME ERROR L'+line+':'+col+'\n'+msg+'\n'+(err&&err.stack?err.stack:'')+'</div>';
-};
 window.addEventListener('load', function() {
   var s = document.createElement('script');
   s.src = 'https://unpkg.com/@babel/standalone@7.24.0/babel.min.js';
@@ -76,11 +43,8 @@ window.addEventListener('load', function() {
       var compiled = Babel.transform(src, { presets: ['react'], sourceType: 'script' }).code;
       new Function('React','ReactDOM', compiled)(React, ReactDOM);
     } catch(e) {
-      document.getElementById('root').innerHTML = '<div style="color:#f0556a;padding:20px;font-family:monospace;font-size:11px;white-space:pre-wrap;background:#0c0e14;min-height:100vh;">COMPILE ERROR:\n' + e.message + '</div>';
+      document.getElementById('root').innerHTML = '<div style="color:#f0556a;padding:20px;font-family:monospace;font-size:11px;white-space:pre-wrap;background:#0c0e14;min-height:100vh;">Erro: ' + e.message + '</div>';
     }
-  };
-  s.onerror = function() {
-    document.getElementById('root').innerHTML = '<div style="color:#f0556a;padding:20px;font-family:monospace;font-size:11px;background:#0c0e14;min-height:100vh;">Erro: falha ao carregar Babel. Verifique sua conexão.</div>';
   };
   document.head.appendChild(s);
 });
@@ -562,7 +526,7 @@ const PATRIMONIO_SEED = {
   ],
 };
 
-function PatrimonioView({ onAddAtivo, isMobile }) {
+function PatrimonioView({ onAddAtivo }) {
   const [pat, setPat] = useState(() => {
     try { const s = localStorage.getItem("financas_pat"); return s ? JSON.parse(s) : PATRIMONIO_SEED; } catch { return PATRIMONIO_SEED; }
   });
@@ -633,7 +597,7 @@ function PatrimonioView({ onAddAtivo, isMobile }) {
     </div>
 
     {/* KPIs topo */}
-    <div style={{display:"grid",gridTemplateColumns:isMobile?"repeat(2,1fr)":"repeat(4,1fr)",gap:isMobile?8:12,marginBottom:14}}>
+    <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginBottom:14}}>
       {[
         { label:"Patrimônio Bruto", val:totalGeral, color:T.green, icon:"◈" },
         { label:"Dívidas Ativas", val:totalDividas, color:T.red, icon:"↓" },
@@ -659,38 +623,46 @@ function PatrimonioView({ onAddAtivo, isMobile }) {
 
     {/* ── RESUMO ── */}
     {secao==="resumo"&&<>
-      <div style={card}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:16}}>
-          <div style={{fontSize:13,fontWeight:700}}>Composição do Patrimônio</div>
-          <div style={{fontSize:10,color:T.muted}}>Total: <span style={{color:T.green,fontWeight:700,fontFamily:"'JetBrains Mono',monospace"}}>{fmtShort(totalGeral)}</span></div>
-        </div>
-        {[
-          { label:"Conta Corrente", val:totalCC, color:"#4d7cf6", icon:"🏦" },
-          { label:"Renda Fixa & CDB", val:pat.ativos_financeiros.filter(a=>a.tipo==="renda_fixa").reduce((a,b)=>a+b.valor,0), color:"#26c67a", icon:"📊" },
-          { label:"Tesouro Direto", val:pat.ativos_financeiros.filter(a=>a.tipo==="tesouro").reduce((a,b)=>a+b.valor,0), color:"#9b6ff7", icon:"🏛️" },
-          { label:"Fundos", val:pat.ativos_financeiros.filter(a=>a.tipo==="fundo").reduce((a,b)=>a+b.valor,0), color:"#f0a035", icon:"💼" },
-          { label:"Ações & ETFs", val:pat.ativos_financeiros.filter(a=>a.tipo==="acoes").reduce((a,b)=>a+b.valor,0), color:"#f0556a", icon:"📈" },
-          { label:"PGBL / Previdência", val:totalPrevidencia, color:"#26c67a", icon:"🏢" },
-          { label:"FGTS", val:totalFGTS, color:"#4d7cf6", icon:"🏛️" },
-          { label:"Imóveis", val:totalImoveis, color:"#f0a035", icon:"🏠" },
-          { label:"Veículos", val:totalVeiculos, color:"#6b728f", icon:"🚗" },
-        ].filter(x=>x.val>0).map(item=>(
-          <div key={item.label} style={{marginBottom:12}}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",fontSize:12,marginBottom:4}}>
-              <span style={{display:"flex",alignItems:"center",gap:7}}>
-                <span style={{fontSize:15}}>{item.icon}</span>
-                <span style={{fontWeight:600}}>{item.label}</span>
-              </span>
-              <div style={{textAlign:"right"}}>
-                <span style={{fontWeight:700,color:item.color,fontFamily:"'JetBrains Mono',monospace",fontSize:13}}>{fmtShort(item.val)}</span>
-                <span style={{fontSize:9,color:T.muted,marginLeft:6}}>{pctDoTotal(item.val)}%</span>
+      <div style={{display:"grid",gridTemplateColumns:"1.5fr 1fr",gap:12}}>
+        <div style={card}>
+          <div style={{fontSize:13,fontWeight:700,marginBottom:14}}>Composição do Patrimônio</div>
+          {[
+            { label:"Conta Corrente", val:totalCC, color:"#4d7cf6", icon:"🏦" },
+            { label:"Renda Fixa & CDB", val:pat.ativos_financeiros.filter(a=>a.tipo==="renda_fixa").reduce((a,b)=>a+b.valor,0), color:"#26c67a", icon:"📊" },
+            { label:"Tesouro Direto", val:pat.ativos_financeiros.filter(a=>a.tipo==="tesouro").reduce((a,b)=>a+b.valor,0), color:"#9b6ff7", icon:"🏛️" },
+            { label:"Fundos", val:pat.ativos_financeiros.filter(a=>a.tipo==="fundo").reduce((a,b)=>a+b.valor,0), color:"#f0a035", icon:"💼" },
+            { label:"Ações & ETFs", val:pat.ativos_financeiros.filter(a=>a.tipo==="acoes").reduce((a,b)=>a+b.valor,0), color:"#f0556a", icon:"📈" },
+            { label:"PGBL / Previdência", val:totalPrevidencia, color:"#26c67a", icon:"🏢" },
+            { label:"FGTS", val:totalFGTS, color:"#4d7cf6", icon:"🏛️" },
+            { label:"Imóveis", val:totalImoveis, color:"#f0a035", icon:"🏠" },
+            { label:"Veículos", val:totalVeiculos, color:"#6b728f", icon:"🚗" },
+          ].filter(x=>x.val>0).map(item=>(
+            <div key={item.label} style={{marginBottom:10}}>
+              <div style={{display:"flex",justifyContent:"space-between",fontSize:12,marginBottom:3}}>
+                <span style={{display:"flex",alignItems:"center",gap:6}}><span>{item.icon}</span><span style={{fontWeight:600}}>{item.label}</span></span>
+                <span style={{fontWeight:700,color:item.color,fontFamily:"'JetBrains Mono',monospace"}}>{fmt(item.val)}</span>
+              </div>
+              <div style={{display:"flex",gap:4,alignItems:"center"}}>
+                <div style={{flex:1,height:5,background:T.border,borderRadius:99}}>
+                  <div style={{width:`${Math.min((item.val/totalGeral)*100,100)}%`,height:"100%",background:item.color,borderRadius:99}}/>
+                </div>
+                <span style={{fontSize:9,color:T.muted,width:34,textAlign:"right"}}>{pctDoTotal(item.val)}%</span>
               </div>
             </div>
-            <div style={{height:6,background:T.border,borderRadius:99}}>
-              <div style={{width:`${Math.min((item.val/totalGeral)*100,100)}%`,height:"100%",background:item.color,borderRadius:99,transition:"width .5s ease"}}/>
-            </div>
+          ))}
+        </div>
+        <div style={{display:"flex",flexDirection:"column",gap:12}}>
+          
+          <div style={card}>
+            <div style={{fontSize:13,fontWeight:700,marginBottom:8}}>Conta Corrente</div>
+            {pat.conta_corrente.map(c=>(
+              <div key={c.id}>
+                <div style={{fontSize:11,color:T.muted,marginBottom:4}}>{c.instituicao}</div>
+                <div style={{fontSize:22,fontWeight:800,color:T.blue,fontFamily:"'JetBrains Mono',monospace"}}>{fmt(c.valor)}</div>
+              </div>
+            ))}
           </div>
-        ))}
+        </div>
       </div>
     </>}
 
@@ -698,7 +670,7 @@ function PatrimonioView({ onAddAtivo, isMobile }) {
     {secao==="financeiros"&&<>
       <div style={card}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
-          <div style={{fontSize:13,fontWeight:700}}>Ativos Financeiros — Total: <span style={{color:T.green,fontFamily:"'JetBrains Mono',monospace"}}>{fmtShort(totalFinanceiro)}</span></div>
+          <div style={{fontSize:13,fontWeight:700}}>Ativos Financeiros — Total: <span style={{color:T.green,fontFamily:"'JetBrains Mono',monospace"}}>{fmt(totalFinanceiro)}</span></div>
           <button style={{...btnS,...btnO,padding:"6px 12px",fontSize:11}} onClick={()=>setModalPat("ativo")}>+ Adicionar</button>
         </div>
         {["renda_fixa","tesouro","fundo","acoes","outros"].map(grupo=>{
@@ -739,18 +711,18 @@ function PatrimonioView({ onAddAtivo, isMobile }) {
         {pat.previdencia.map(p=>(
           <div key={p.id} style={{background:T.surface,border:`1px solid ${T.border}`,borderRadius:12,padding:16,marginBottom:12}}>
             <div style={{fontSize:14,fontWeight:700,marginBottom:12}}>{p.nome}</div>
-            <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr 1fr":"1fr 1fr 1fr",gap:isMobile?8:12,marginBottom:12}}>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12,marginBottom:12}}>
               <div style={{background:T.card,borderRadius:8,padding:10}}>
                 <div style={{fontSize:9,color:T.muted,textTransform:"uppercase",letterSpacing:.6}}>Seu investimento</div>
-                <div style={{fontSize:16,fontWeight:800,color:T.green,fontFamily:"'JetBrains Mono',monospace",marginTop:4}}>{fmtShort(p.valor_proprio)}</div>
+                <div style={{fontSize:16,fontWeight:800,color:T.green,fontFamily:"'JetBrains Mono',monospace",marginTop:4}}>{fmt(p.valor_proprio)}</div>
               </div>
               <div style={{background:T.card,borderRadius:8,padding:10}}>
                 <div style={{fontSize:9,color:T.muted,textTransform:"uppercase",letterSpacing:.6}}>Empresa (Santander)</div>
-                <div style={{fontSize:16,fontWeight:800,color:T.blue,fontFamily:"'JetBrains Mono',monospace",marginTop:4}}>{fmtShort(p.valor_empresa)}</div>
+                <div style={{fontSize:16,fontWeight:800,color:T.blue,fontFamily:"'JetBrains Mono',monospace",marginTop:4}}>{fmt(p.valor_empresa)}</div>
               </div>
               <div style={{background:T.card,borderRadius:8,padding:10}}>
                 <div style={{fontSize:9,color:T.muted,textTransform:"uppercase",letterSpacing:.6}}>Total acumulado</div>
-                <div style={{fontSize:16,fontWeight:800,color:T.purple,fontFamily:"'JetBrains Mono',monospace",marginTop:4}}>{fmtShort(p.valor_total)}</div>
+                <div style={{fontSize:16,fontWeight:800,color:T.purple,fontFamily:"'JetBrains Mono',monospace",marginTop:4}}>{fmt(p.valor_total)}</div>
               </div>
             </div>
             <div style={{display:"flex",gap:16,fontSize:11,color:T.muted}}>
@@ -770,7 +742,7 @@ function PatrimonioView({ onAddAtivo, isMobile }) {
     {secao==="imoveis"&&<>
       <div style={card}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
-          <div style={{fontSize:13,fontWeight:700}}>Imóveis — Total: <span style={{color:T.green,fontFamily:"'JetBrains Mono',monospace"}}>{fmtShort(totalImoveis)}</span></div>
+          <div style={{fontSize:13,fontWeight:700}}>Imóveis — Total: <span style={{color:T.green,fontFamily:"'JetBrains Mono',monospace"}}>{fmt(totalImoveis)}</span></div>
           <button style={{...btnS,...btnO,padding:"6px 12px",fontSize:11}} onClick={()=>{setEditItem(null);setFormImovel({nome:"",valor_mercado:"",financiado:false,saldo_devedor:"",parcela_mensal:"",prazo_restante:"",aquisicao:""});setModalPat("imovel");}}>+ Imóvel</button>
         </div>
         {pat.imoveis.length===0?(
@@ -791,16 +763,16 @@ function PatrimonioView({ onAddAtivo, isMobile }) {
             <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10}}>
               <div style={{background:T.card,borderRadius:8,padding:10}}>
                 <div style={{fontSize:9,color:T.muted,textTransform:"uppercase",letterSpacing:.6}}>Valor de Mercado</div>
-                <div style={{fontSize:17,fontWeight:800,color:T.green,fontFamily:"'JetBrains Mono',monospace",marginTop:4}}>{fmtShort(im.valor_mercado)}</div>
+                <div style={{fontSize:17,fontWeight:800,color:T.green,fontFamily:"'JetBrains Mono',monospace",marginTop:4}}>{fmt(im.valor_mercado)}</div>
               </div>
               {im.financiado&&<>
                 <div style={{background:T.card,borderRadius:8,padding:10}}>
                   <div style={{fontSize:9,color:T.muted,textTransform:"uppercase",letterSpacing:.6}}>Saldo Devedor</div>
-                  <div style={{fontSize:17,fontWeight:800,color:T.red,fontFamily:"'JetBrains Mono',monospace",marginTop:4}}>{fmtShort(im.saldo_devedor)}</div>
+                  <div style={{fontSize:17,fontWeight:800,color:T.red,fontFamily:"'JetBrains Mono',monospace",marginTop:4}}>{fmt(im.saldo_devedor)}</div>
                 </div>
                 <div style={{background:T.card,borderRadius:8,padding:10}}>
                   <div style={{fontSize:9,color:T.muted,textTransform:"uppercase",letterSpacing:.6}}>Parcela / Mês</div>
-                  <div style={{fontSize:17,fontWeight:800,color:T.amber,fontFamily:"'JetBrains Mono',monospace",marginTop:4}}>{fmtShort(im.parcela_mensal)}</div>
+                  <div style={{fontSize:17,fontWeight:800,color:T.amber,fontFamily:"'JetBrains Mono',monospace",marginTop:4}}>{fmt(im.parcela_mensal)}</div>
                   <div style={{fontSize:9,color:T.muted,marginTop:2}}>{im.prazo_restante} meses restantes</div>
                 </div>
               </>}
@@ -812,7 +784,7 @@ function PatrimonioView({ onAddAtivo, isMobile }) {
             {im.financiado&&<div style={{marginTop:8}}>
               <div style={{display:"flex",justifyContent:"space-between",fontSize:9,color:T.muted,marginBottom:3}}>
                 <span>Equity (valor - dívida)</span>
-                <span style={{fontWeight:700,color:T.green}}>{fmtShort(im.valor_mercado - (im.saldo_devedor||0))}</span>
+                <span style={{fontWeight:700,color:T.green}}>{fmt(im.valor_mercado - (im.saldo_devedor||0))}</span>
               </div>
               <Bar pct={Math.min(((im.valor_mercado-(im.saldo_devedor||0))/im.valor_mercado)*100,100)} color={T.green}/>
             </div>}
@@ -825,7 +797,7 @@ function PatrimonioView({ onAddAtivo, isMobile }) {
     {secao==="veiculos"&&<>
       <div style={card}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
-          <div style={{fontSize:13,fontWeight:700}}>Veículos — Total: <span style={{color:T.green,fontFamily:"'JetBrains Mono',monospace"}}>{fmtShort(totalVeiculos)}</span></div>
+          <div style={{fontSize:13,fontWeight:700}}>Veículos — Total: <span style={{color:T.green,fontFamily:"'JetBrains Mono',monospace"}}>{fmt(totalVeiculos)}</span></div>
           <button style={{...btnS,...btnO,padding:"6px 12px",fontSize:11}} onClick={()=>{setEditItem(null);setFormVeiculo({nome:"",modelo:"",ano:"",valor_mercado:"",financiado:false,saldo_devedor:"",parcela_mensal:"",prazo_restante:""});setModalPat("veiculo");}}>+ Veículo</button>
         </div>
         {pat.veiculos.length===0?(
@@ -846,7 +818,7 @@ function PatrimonioView({ onAddAtivo, isMobile }) {
             <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10}}>
               <div style={{background:T.card,borderRadius:8,padding:10}}>
                 <div style={{fontSize:9,color:T.muted,textTransform:"uppercase",letterSpacing:.6}}>Valor de Mercado</div>
-                <div style={{fontSize:17,fontWeight:800,color:T.green,fontFamily:"'JetBrains Mono',monospace",marginTop:4}}>{fmtShort(ve.valor_mercado)}</div>
+                <div style={{fontSize:17,fontWeight:800,color:T.green,fontFamily:"'JetBrains Mono',monospace",marginTop:4}}>{fmt(ve.valor_mercado)}</div>
               </div>
               {ve.financiado&&<>
                 <div style={{background:T.card,borderRadius:8,padding:10}}>
@@ -981,269 +953,6 @@ function PatrimonioView({ onAddAtivo, isMobile }) {
 }
 
 
-
-// ── PRINT REPORT ─────────────────────────────────────────────────────────────
-function PrintReport({ txs, pat, T, fmt, fmtShort, MONTH_NAMES, competencia }) {
-  const totalFinanceiro = pat.ativos_financeiros.reduce((a,b)=>a+b.valor,0);
-  const totalPrevidencia = pat.previdencia.reduce((a,b)=>a+b.valor_total,0);
-  const totalFGTS = pat.fgts.reduce((a,b)=>a+b.valor,0);
-  const totalCC = pat.conta_corrente.reduce((a,b)=>a+b.valor,0);
-  const totalImoveis = pat.imoveis.reduce((a,b)=>a+b.valor_mercado,0);
-  const totalVeiculos = pat.veiculos.reduce((a,b)=>a+b.valor_mercado,0);
-  const totalGeral = totalFinanceiro+totalPrevidencia+totalFGTS+totalCC+totalImoveis+totalVeiculos;
-  const totalDividas = [...pat.imoveis,...pat.veiculos].filter(x=>x.financiado).reduce((a,b)=>a+(b.saldo_devedor||0),0);
-  const now = new Date();
-  const dateLabel = `${String(now.getDate()).padStart(2,"0")}/${String(now.getMonth()+1).padStart(2,"0")}/${now.getFullYear()}`;
-  const timeLabel = `${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")}`;
-  const months = [...new Set(txs.map(t=>competencia(t)).filter(Boolean))].sort();
-  const monthData = months.map(m=>{
-    const ms=txs.filter(t=>competencia(t)===m);
-    return { m, rec:ms.filter(t=>t.tipo==="receita").reduce((a,b)=>a+b.valor,0), gas:ms.filter(t=>t.tipo==="gasto").reduce((a,b)=>a+b.valor,0), inv:ms.filter(t=>t.tipo==="investimento").reduce((a,b)=>a+b.valor,0) };
-  });
-  const allRec=txs.filter(t=>t.tipo==="receita").reduce((a,b)=>a+b.valor,0);
-  const allGas=txs.filter(t=>t.tipo==="gasto").reduce((a,b)=>a+b.valor,0);
-  const allInv=txs.filter(t=>t.tipo==="investimento").reduce((a,b)=>a+b.valor,0);
-  const saldo=allRec-allGas-allInv;
-
-  const MN="#0c0e14", MC="#161928", MB="#232840", MT="#6b728f", MG="#26c67a", MR="#f0556a", MB2="#4d7cf6", MP="#9b6ff7", MA="#f0a035";
-  const JB="'JetBrains Mono',monospace";
-  const page={background:MN,color:"#e8eaf6",padding:"14mm 16mm",minHeight:"297mm",boxSizing:"border-box",pageBreakAfter:"always",fontFamily:"'Sora',sans-serif"};
-  const hdr=(icon,title,sub)=>(
-    <div style={{display:"flex",alignItems:"flex-end",justifyContent:"space-between",borderBottom:`2px solid ${MB}`,paddingBottom:8,marginBottom:14}}>
-      <div>
-        <div style={{fontSize:6,color:MT,letterSpacing:1,textTransform:"uppercase",marginBottom:3}}>FinançasFam · Vitor Granero · 2026</div>
-        <div style={{fontSize:16,fontWeight:800,color:"#e8eaf6"}}>{icon} {title}</div>
-        {sub&&<div style={{fontSize:8,color:MT,marginTop:2}}>{sub}</div>}
-      </div>
-      <div style={{textAlign:"right",fontSize:7,color:MT}}>
-        <div>{dateLabel}</div><div>{timeLabel}</div>
-      </div>
-    </div>
-  );
-  const kpi=(label,val,color,sub)=>(
-    <div style={{background:MC,border:`1px solid ${MB}`,borderRadius:8,padding:"10px 12px"}}>
-      <div style={{fontSize:7,color:MT,textTransform:"uppercase",letterSpacing:.7,marginBottom:4}}>{label}</div>
-      <div style={{fontSize:18,fontWeight:800,color,fontFamily:JB,lineHeight:1}}>{val}</div>
-      {sub&&<div style={{fontSize:7,color:MT,marginTop:3}}>{sub}</div>}
-    </div>
-  );
-  const th={padding:"4px 6px",color:MT,fontWeight:600,fontSize:7.5,textTransform:"uppercase",letterSpacing:.5,borderBottom:`1px solid ${MB}`};
-  const td0={padding:"5px 6px",fontSize:9,borderBottom:`1px solid #1a1d2e`};
-
-  // ── Patrimônio classes ──
-  const patClasses=[
-    {l:"Conta Corrente",v:totalCC,c:MB2},
-    {l:"Renda Fixa & CDB",v:pat.ativos_financeiros.filter(a=>a.tipo==="renda_fixa").reduce((a,b)=>a+b.valor,0),c:MG},
-    {l:"Tesouro Direto",v:pat.ativos_financeiros.filter(a=>a.tipo==="tesouro").reduce((a,b)=>a+b.valor,0),c:MP},
-    {l:"Ações & ETFs",v:pat.ativos_financeiros.filter(a=>["acoes"].includes(a.tipo)).reduce((a,b)=>a+b.valor,0),c:MR},
-    {l:"Fundos",v:pat.ativos_financeiros.filter(a=>a.tipo==="fundo").reduce((a,b)=>a+b.valor,0),c:MA},
-    {l:"PGBL / Previdência",v:totalPrevidencia,c:MG},
-    {l:"FGTS",v:totalFGTS,c:MB2},
-    {l:"Imóvel (Brooklin)",v:totalImoveis,c:MA},
-    {l:"Veículo (Tiguan)",v:totalVeiculos,c:MT},
-  ].filter(x=>x.v>0);
-
-  return(
-    <div id="print-report" style={{display:"none"}}>
-
-      {/* ══ PÁG 1 — DASHBOARD ══════════════════════════════════════════════ */}
-      <div style={page}>
-        {hdr("📊","Dashboard","Visão geral financeira · Acumulado 2026")}
-
-        {/* KPIs principais */}
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:8,marginBottom:16}}>
-          {kpi("Receitas",fmtShort(allRec),MG,`${txs.filter(t=>t.tipo==="receita").length} lançamentos`)}
-          {kpi("Gastos",fmtShort(allGas),MR,`${txs.filter(t=>t.tipo==="gasto").length} lançamentos`)}
-          {kpi("Investimentos",fmtShort(allInv),MB2,`${txs.filter(t=>t.tipo==="investimento").length} lançamentos`)}
-          {kpi("Saldo",fmtShort(saldo),saldo>=0?MP:MR,saldo>=0?"✓ Positivo":"✗ Negativo")}
-        </div>
-
-        {/* Equação */}
-        <div style={{background:MC,border:`1px solid ${MB}`,borderRadius:8,padding:"10px 14px",marginBottom:16,display:"flex",alignItems:"center",gap:12,flexWrap:"wrap"}}>
-          <span style={{fontSize:8,color:MT,textTransform:"uppercase",letterSpacing:.6}}>Equação do mês</span>
-          {[{v:allRec,c:MG,op:""},{v:allGas,c:MR,op:"−"},{v:allInv,c:MB2,op:"−"},{v:saldo,c:MP,op:"="}].map((x,i)=>(
-            <span key={i} style={{display:"flex",alignItems:"center",gap:8}}>
-              {x.op&&<span style={{color:MT,fontSize:14,fontWeight:300}}>{x.op}</span>}
-              <span style={{fontFamily:JB,fontWeight:800,fontSize:14,color:x.c}}>{fmtShort(x.v)}</span>
-            </span>
-          ))}
-        </div>
-
-        {/* Evolução mensal tabela */}
-        <div style={{marginBottom:16}}>
-          <div style={{fontSize:9,fontWeight:700,color:MT,textTransform:"uppercase",letterSpacing:.7,marginBottom:8}}>Evolução Mensal</div>
-          <table style={{width:"100%",borderCollapse:"collapse"}}>
-            <thead><tr>
-              {["Mês","Receitas","Gastos","Investimentos","Saldo"].map(h=><th key={h} style={{...th,textAlign:h==="Mês"?"left":"right"}}>{h}</th>)}
-            </tr></thead>
-            <tbody>{monthData.map(d=>(
-              <tr key={d.m}>
-                <td style={{...td0,fontWeight:600}}>{MONTH_NAMES[+d.m.slice(-2)-1]+"/26"}</td>
-                <td style={{...td0,textAlign:"right",fontFamily:JB,color:MG}}>{fmtShort(d.rec)}</td>
-                <td style={{...td0,textAlign:"right",fontFamily:JB,color:MR}}>{fmtShort(d.gas)}</td>
-                <td style={{...td0,textAlign:"right",fontFamily:JB,color:MB2}}>{fmtShort(d.inv)}</td>
-                <td style={{...td0,textAlign:"right",fontFamily:JB,color:(d.rec-d.gas-d.inv)>=0?MG:MR,fontWeight:700}}>{fmtShort(d.rec-d.gas-d.inv)}</td>
-              </tr>
-            ))}</tbody>
-          </table>
-        </div>
-
-        {/* Top gastos por categoria */}
-        <div>
-          <div style={{fontSize:9,fontWeight:700,color:MT,textTransform:"uppercase",letterSpacing:.7,marginBottom:8}}>Top Categorias de Gasto</div>
-          {(()=>{
-            const cats={};
-            txs.filter(t=>t.tipo==="gasto").forEach(t=>{cats[t.categoria]=(cats[t.categoria]||0)+t.valor;});
-            return Object.entries(cats).sort((a,b)=>b[1]-a[1]).slice(0,8).map(([cat,val])=>(
-              <div key={cat} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"4px 0",borderBottom:`1px solid ${MB}`}}>
-                <span style={{fontSize:9}}>{cat}</span>
-                <div style={{display:"flex",alignItems:"center",gap:10}}>
-                  <div style={{width:80,height:4,background:MB,borderRadius:99}}>
-                    <div style={{height:"100%",width:`${Math.min(val/allGas*100,100)}%`,background:MR,borderRadius:99}}/>
-                  </div>
-                  <span style={{fontFamily:JB,fontSize:9,color:MR,width:60,textAlign:"right"}}>{fmtShort(val)}</span>
-                </div>
-              </div>
-            ));
-          })()}
-        </div>
-      </div>
-
-      {/* ══ PÁG 2 — PATRIMÔNIO ═════════════════════════════════════════════ */}
-      <div style={page}>
-        {hdr("💼","Patrimônio","Composição e posição atual")}
-
-        {/* KPIs patrimônio */}
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:8,marginBottom:16}}>
-          {kpi("Patrimônio Bruto",fmtShort(totalGeral),MG)}
-          {kpi("Dívidas",fmtShort(totalDividas),MR,"Financiamento imóvel")}
-          {kpi("Patrimônio Líquido",fmtShort(totalGeral-totalDividas),MP)}
-          {kpi("Liquidez Imediata",fmtShort(totalCC+totalFinanceiro),MB2,"CC + Financeiros")}
-        </div>
-
-        {/* Composição */}
-        <div style={{display:"grid",gridTemplateColumns:"1.4fr 1fr",gap:16}}>
-          <div>
-            <div style={{fontSize:9,fontWeight:700,color:MT,textTransform:"uppercase",letterSpacing:.7,marginBottom:8}}>Composição por Classe</div>
-            <table style={{width:"100%",borderCollapse:"collapse"}}>
-              <thead><tr>
-                <th style={{...th,textAlign:"left"}}>Classe</th>
-                <th style={{...th,textAlign:"right"}}>Valor</th>
-                <th style={{...th,textAlign:"right"}}>%</th>
-              </tr></thead>
-              <tbody>
-                {patClasses.map(x=>(
-                  <tr key={x.l}>
-                    <td style={{...td0,display:"flex",alignItems:"center",gap:6}}>
-                      <div style={{width:8,height:8,borderRadius:2,background:x.c,flexShrink:0}}/>
-                      {x.l}
-                    </td>
-                    <td style={{...td0,textAlign:"right",fontFamily:JB,color:x.c}}>{fmt(x.v)}</td>
-                    <td style={{...td0,textAlign:"right",color:MT,fontSize:8}}>{(x.v/totalGeral*100).toFixed(1)}%</td>
-                  </tr>
-                ))}
-                <tr style={{borderTop:`2px solid ${MB}`}}>
-                  <td style={{...td0,fontWeight:800,fontSize:10}}>Patrimônio Bruto</td>
-                  <td style={{...td0,textAlign:"right",fontFamily:JB,color:MG,fontWeight:800}}>{fmt(totalGeral)}</td>
-                  <td style={{...td0,textAlign:"right",color:MT}}>100%</td>
-                </tr>
-                <tr>
-                  <td style={{...td0,color:MR,fontWeight:700}}>(-) Dívidas</td>
-                  <td style={{...td0,textAlign:"right",fontFamily:JB,color:MR}}>{fmt(totalDividas)}</td>
-                  <td style={{...td0}}/>
-                </tr>
-                <tr>
-                  <td style={{...td0,color:MP,fontWeight:800,fontSize:10}}>= Patrimônio Líquido</td>
-                  <td style={{...td0,textAlign:"right",fontFamily:JB,color:MP,fontWeight:800}}>{fmt(totalGeral-totalDividas)}</td>
-                  <td style={{...td0}}/>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          <div>
-            {/* Imóveis */}
-            <div style={{fontSize:9,fontWeight:700,color:MT,textTransform:"uppercase",letterSpacing:.7,marginBottom:8}}>Imóveis</div>
-            {pat.imoveis.map(im=>(
-              <div key={im.id} style={{background:MC,border:`1px solid ${MB}`,borderRadius:8,padding:"10px 12px",marginBottom:8}}>
-                <div style={{fontSize:10,fontWeight:700,marginBottom:6}}>🏠 {im.nome}</div>
-                <div style={{display:"flex",justifyContent:"space-between",fontSize:8,marginBottom:3}}>
-                  <span style={{color:MT}}>Valor mercado</span>
-                  <span style={{fontFamily:JB,color:MG,fontWeight:700}}>{fmtShort(im.valor_mercado)}</span>
-                </div>
-                {im.financiado&&<div style={{display:"flex",justifyContent:"space-between",fontSize:8,marginBottom:3}}>
-                  <span style={{color:MT}}>Saldo devedor</span>
-                  <span style={{fontFamily:JB,color:MR,fontWeight:700}}>{fmtShort(im.saldo_devedor)}</span>
-                </div>}
-                {im.financiado&&<div style={{display:"flex",justifyContent:"space-between",fontSize:8,marginBottom:3}}>
-                  <span style={{color:MT}}>Parcela mensal</span>
-                  <span style={{fontFamily:JB,color:MA,fontWeight:700}}>{fmtShort(im.parcela_mensal)}</span>
-                </div>}
-                <div style={{display:"flex",justifyContent:"space-between",fontSize:8}}>
-                  <span style={{color:MT}}>Equity</span>
-                  <span style={{fontFamily:JB,color:MP,fontWeight:700}}>{fmtShort(im.valor_mercado-(im.saldo_devedor||0))}</span>
-                </div>
-              </div>
-            ))}
-            {/* Veículos */}
-            <div style={{fontSize:9,fontWeight:700,color:MT,textTransform:"uppercase",letterSpacing:.7,margin:"12px 0 8px"}}>Veículos</div>
-            {pat.veiculos.map(ve=>(
-              <div key={ve.id} style={{background:MC,border:`1px solid ${MB}`,borderRadius:8,padding:"10px 12px",marginBottom:8}}>
-                <div style={{fontSize:10,fontWeight:700,marginBottom:4}}>🚗 {ve.nome}</div>
-                <div style={{display:"flex",justifyContent:"space-between",fontSize:8}}>
-                  <span style={{color:MT}}>FIPE</span>
-                  <span style={{fontFamily:JB,color:MT,fontWeight:700}}>{fmtShort(ve.valor_mercado)}</span>
-                </div>
-              </div>
-            ))}
-            {/* Previdência */}
-            <div style={{fontSize:9,fontWeight:700,color:MT,textTransform:"uppercase",letterSpacing:.7,margin:"12px 0 8px"}}>Previdência</div>
-            {pat.previdencia.map(p=>(
-              <div key={p.id} style={{background:MC,border:`1px solid ${MB}`,borderRadius:8,padding:"10px 12px"}}>
-                <div style={{fontSize:9,fontWeight:700,marginBottom:6}}>{p.nome}</div>
-                <div style={{display:"flex",justifyContent:"space-between",fontSize:8,marginBottom:3}}>
-                  <span style={{color:MT}}>Seu aporte</span>
-                  <span style={{fontFamily:JB,color:MG}}>{fmtShort(p.valor_proprio)}</span>
-                </div>
-                <div style={{display:"flex",justifyContent:"space-between",fontSize:8,marginBottom:3}}>
-                  <span style={{color:MT}}>Empresa</span>
-                  <span style={{fontFamily:JB,color:MB2}}>{fmtShort(p.valor_empresa)}</span>
-                </div>
-                <div style={{display:"flex",justifyContent:"space-between",fontSize:8}}>
-                  <span style={{color:MT,fontWeight:700}}>Total</span>
-                  <span style={{fontFamily:JB,color:MP,fontWeight:700}}>{fmtShort(p.valor_total)}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* ══ PÁG 3 — TRANSAÇÕES ═════════════════════════════════════════════ */}
-      <div style={{...page,pageBreakAfter:"auto"}}>
-        {hdr("📋","Transações",`${txs.length} lançamentos registrados`)}
-        <table style={{width:"100%",borderCollapse:"collapse",fontSize:8.5}}>
-          <thead><tr style={{background:MC}}>
-            {["Data","Descrição","Categoria","Tipo","Valor"].map(h=>(
-              <th key={h} style={{...th,textAlign:h==="Valor"?"right":"left",padding:"5px 6px"}}>{h}</th>
-            ))}
-          </tr></thead>
-          <tbody>{txs.slice().sort((a,b)=>b.data.localeCompare(a.data)).map(t=>(
-            <tr key={t.id} style={{borderBottom:`1px solid #1a1d2e`}}>
-              <td style={{...td0,fontFamily:"monospace",color:MT,whiteSpace:"nowrap",fontSize:8}}>{t.data}</td>
-              <td style={{...td0,maxWidth:170,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",fontWeight:600}}>{t.descricao}</td>
-              <td style={{...td0,color:MT,whiteSpace:"nowrap",fontSize:8}}>{t.categoria}</td>
-              <td style={{...td0,color:t.tipo==="receita"?MG:t.tipo==="investimento"?MB2:MR,fontWeight:700,textTransform:"capitalize",whiteSpace:"nowrap",fontSize:8}}>{t.tipo}</td>
-              <td style={{...td0,textAlign:"right",fontFamily:JB,fontWeight:700,color:t.tipo==="receita"?MG:t.tipo==="investimento"?MB2:MR,whiteSpace:"nowrap"}}>{t.tipo==="receita"?"+":"-"}{fmtShort(t.valor)}</td>
-            </tr>
-          ))}</tbody>
-        </table>
-      </div>
-
-    </div>
-  );
-}
-
-
 function App(){
   const [txs,setTxs]=useState(()=>{try{const s=localStorage.getItem("financas_txs");return s?JSON.parse(s):SEED;}catch{return SEED;}});
   const [categories,setCategories]=useState(DEFAULT_CATS);
@@ -1286,8 +995,7 @@ function App(){
   const [histMode,setHistMode]=useState("mensal");
   const [histMetric,setHistMetric]=useState("gasto");
   const [dashPeriod,setDashPeriod]=useState("02");
-  const [sideOpen,setSideOpen]=useState(false);
-  const isMobile=typeof window!=="undefined"&&window.innerWidth<=768; // "01".."12" or "ano"
+  const [sideOpen,setSideOpen]=useState(false); // "01".."12" or "ano"
   const [aiChat,setAiChat]=useState([]);
   const [chatInput,setChatInput]=useState("");
   const [chatLoading,setChatLoading]=useState(false);
@@ -1447,8 +1155,8 @@ function App(){
   return(<>
     <div style={{fontFamily:"'Sora',sans-serif",minHeight:"100vh",background:T.bg,color:T.text,display:"flex"}}>
 
-      {/* ── DESKTOP SIDEBAR ── */}
-      {!isMobile&&<aside style={{width:sideOpen?200:60,background:T.surface,borderRight:`1px solid ${T.border}`,display:"flex",flexDirection:"column",position:"fixed",top:0,left:0,bottom:0,zIndex:50,transition:"width .2s ease",overflow:"hidden"}}>
+      {/* Sidebar — colapsável */}
+      <aside style={{width:sideOpen?200:60,background:T.surface,borderRight:`1px solid ${T.border}`,display:"flex",flexDirection:"column",position:"fixed",top:0,left:0,bottom:0,zIndex:50,transition:"width .2s ease",overflow:"hidden"}}>
         <div style={{padding:sideOpen?"22px 20px 18px":"18px 10px",borderBottom:`1px solid ${T.border}`,display:"flex",alignItems:"center",justifyContent:sideOpen?"space-between":"center",minHeight:64}}>
           {sideOpen&&<div>
             <div style={{fontSize:15,fontWeight:800,letterSpacing:-.5,whiteSpace:"nowrap"}}>💰 FinançasFam</div>
@@ -1465,19 +1173,9 @@ function App(){
         <div style={{padding:"10px 8px",borderTop:`1px solid ${T.border}`,textAlign:"center"}}>
           <div style={{fontSize:9,color:T.muted,letterSpacing:.7,textTransform:"uppercase"}}>{sideOpen?`${txs.length} lançamentos`:"≡"}</div>
         </div>
-      </aside>}
+      </aside>
 
-      {/* ── MOBILE TOP BAR ── */}
-      {isMobile&&<div style={{position:"fixed",top:0,left:0,right:0,background:T.surface,borderBottom:`1px solid ${T.border}`,display:"flex",alignItems:"center",justifyContent:"space-between",padding:"0 16px",paddingTop:"env(safe-area-inset-top)",height:"calc(52px + env(safe-area-inset-top))",zIndex:50}}>
-        <div style={{fontSize:14,fontWeight:800,letterSpacing:-.5}}>💰 FinançasFam</div>
-        <div style={{fontSize:10,color:T.muted}}>{NAVS.find(n=>n.id===tab)?.label||""}</div>
-        <div style={{display:"flex",gap:8,alignItems:"center"}}>
-          <button title="Exportar PDF" style={{...btnS,...btnO,padding:"6px 10px",fontSize:13}} onClick={()=>window.print()}>🖨️</button>
-          <button style={{...btnP,...btnS,padding:"6px 12px",fontSize:11}} onClick={()=>{setEditId(null);setForm({tipo:"gasto",categoria:"Alimentação",descricao:"",valor:"",data:today(),origem:"manual",recorrente:false,recorrencia:"mensal",fonte:""});setModal("form");}}>+</button>
-        </div>
-      </div>}
-
-      <main style={{marginLeft:isMobile?0:sideOpen?200:60,flex:1,padding:isMobile?"12px":"24px",paddingLeft:isMobile?"max(12px, env(safe-area-inset-left))":"24px",paddingRight:isMobile?"max(12px, env(safe-area-inset-right))":"24px",paddingTop:isMobile?"calc(64px + env(safe-area-inset-top))":"24px",paddingBottom:isMobile?"calc(80px + env(safe-area-inset-bottom))":"24px",minHeight:"100vh",transition:"margin-left .2s ease",overflowX:"hidden"}}>
+      <main style={{marginLeft:sideOpen?200:60,flex:1,padding:24,minHeight:"100vh",transition:"margin-left .2s ease"}}>
 
         {/* ─── DASHBOARD ─── */}
         {tab==="dashboard"&&<>
@@ -1488,15 +1186,16 @@ function App(){
               <div style={{fontSize:11,color:T.muted,marginTop:2}}>Finanças Familiar · 2026</div>
             </div>
             <div style={{display:"flex",gap:10,alignItems:"center"}}>
-              <select style={{...sel,fontSize:12,fontWeight:600,padding:"7px 12px",minWidth:isMobile?120:160,color:T.text}} value={dashPeriod} onChange={e=>setDashPeriod(e.target.value)}>
-                <option value="ano">📅 {isMobile?"2026":"Acumulado 2026"}</option>
+              {/* Dropdown seletor de período */}
+              <select style={{...sel,fontSize:12,fontWeight:600,padding:"7px 12px",minWidth:160,color:T.text}} value={dashPeriod} onChange={e=>setDashPeriod(e.target.value)}>
+                <option value="ano">📅 Acumulado 2026</option>
                 {MONTH_NAMES.map((n,i)=>{
                   const v=String(i+1).padStart(2,"0");
                   const hasDados=txs.some(t=>competencia(t)===`2026-${v}`);
                   return hasDados?<option key={v} value={v}>{n+"/26"}</option>:null;
                 })}
               </select>
-              {!isMobile&&<button style={{...btnP,...btnS,padding:"8px 14px"}} onClick={()=>{setEditId(null);setForm({tipo:"gasto",categoria:"Alimentação",descricao:"",valor:"",data:today(),origem:"manual",recorrente:false,recorrencia:"mensal",fonte:""});setModal("form");}}>+ Lançamento</button>}
+              <button style={{...btnP,...btnS,padding:"8px 14px"}} onClick={()=>{setEditId(null);setForm({tipo:"gasto",categoria:"Alimentação",descricao:"",valor:"",data:today(),origem:"manual",recorrente:false,recorrencia:"mensal",fonte:""});setModal("form");}}>+ Lançamento</button>
             </div>
           </div>
 
@@ -1543,95 +1242,95 @@ function App(){
             ];
 
             return(<>
-              {/* Cards 2×2 — Fluxo de Caixa */}
-              <div style={{marginBottom:14}}>
-                <div style={{fontSize:9,fontWeight:700,color:T.muted,textTransform:"uppercase",letterSpacing:.8,marginBottom:10}}>{periodoLabel} — Fluxo de Caixa</div>
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-                  <div style={{background:T.card,border:"1px solid "+T.border,borderRadius:14,padding:"14px 16px",position:"relative",overflow:"hidden"}}>
-                    <div style={{position:"absolute",top:10,right:12,fontSize:22,opacity:.1,fontWeight:900,color:T.green,fontFamily:"monospace"}}>↑</div>
-                    <div style={{fontSize:9,color:T.muted,fontWeight:600,textTransform:"uppercase",letterSpacing:.7,marginBottom:8}}>Receitas</div>
-                    <div style={{fontSize:22,fontWeight:800,color:T.green,fontFamily:"'JetBrains Mono',monospace",letterSpacing:-1,lineHeight:1}}>{fmt(pRec)}</div>
-                    <div style={{fontSize:9,color:T.muted,marginTop:6}}>{periodTxs.filter(t=>t.tipo==="receita").length} lançamentos</div>
+              {/* Equação financeira */}
+              <div style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:16,padding:"18px 24px",marginBottom:14}}>
+                <div style={{fontSize:9,fontWeight:700,color:T.muted,textTransform:"uppercase",letterSpacing:.8,marginBottom:14}}>{periodoLabel} — Fluxo de Caixa</div>
+                <div style={{display:"flex",alignItems:"center",gap:0,flexWrap:"wrap"}}>
+                  {/* Receitas */}
+                  <div style={{textAlign:"center",padding:"0 20px"}}>
+                    <div style={{fontSize:9,color:T.muted,fontWeight:600,textTransform:"uppercase",letterSpacing:.7,marginBottom:6}}>Receitas</div>
+                    <div style={{fontSize:28,fontWeight:800,color:T.green,fontFamily:"'JetBrains Mono',monospace",letterSpacing:-1}}>{fmtShort(pRec)}</div>
+                    <div style={{fontSize:9,color:T.muted,marginTop:4}}>{periodTxs.filter(t=>t.tipo==="receita").length} lançamentos</div>
                   </div>
-                  <div style={{background:T.card,border:"1px solid "+T.border,borderRadius:14,padding:"14px 16px",position:"relative",overflow:"hidden"}}>
-                    <div style={{position:"absolute",top:10,right:12,fontSize:22,opacity:.1,fontWeight:900,color:T.red,fontFamily:"monospace"}}>↓</div>
-                    <div style={{fontSize:9,color:T.muted,fontWeight:600,textTransform:"uppercase",letterSpacing:.7,marginBottom:8}}>Gastos</div>
-                    <div style={{fontSize:22,fontWeight:800,color:T.red,fontFamily:"'JetBrains Mono',monospace",letterSpacing:-1,lineHeight:1}}>{fmt(pGas)}</div>
-                    <div style={{fontSize:9,color:T.muted,marginTop:6}}>{periodTxs.filter(t=>t.tipo==="gasto").length} lançamentos</div>
+                  {/* − */}
+                  <div style={{fontSize:28,fontWeight:300,color:T.muted,padding:"0 4px",flexShrink:0}}>−</div>
+                  {/* Gastos */}
+                  <div style={{textAlign:"center",padding:"0 20px"}}>
+                    <div style={{fontSize:9,color:T.muted,fontWeight:600,textTransform:"uppercase",letterSpacing:.7,marginBottom:6}}>Gastos</div>
+                    <div style={{fontSize:28,fontWeight:800,color:T.red,fontFamily:"'JetBrains Mono',monospace",letterSpacing:-1}}>{fmtShort(pGas)}</div>
+                    <div style={{fontSize:9,color:T.muted,marginTop:4}}>{periodTxs.filter(t=>t.tipo==="gasto").length} lançamentos</div>
                   </div>
-                  <div style={{background:T.card,border:"1px solid "+T.border,borderRadius:14,padding:"14px 16px",position:"relative",overflow:"hidden"}}>
-                    <div style={{position:"absolute",top:10,right:12,fontSize:22,opacity:.1,fontWeight:900,color:T.blue,fontFamily:"monospace"}}>◈</div>
-                    <div style={{fontSize:9,color:T.muted,fontWeight:600,textTransform:"uppercase",letterSpacing:.7,marginBottom:8}}>Investimentos</div>
-                    <div style={{fontSize:22,fontWeight:800,color:T.blue,fontFamily:"'JetBrains Mono',monospace",letterSpacing:-1,lineHeight:1}}>{fmt(pInv)}</div>
-                    <div style={{fontSize:9,color:T.muted,marginTop:6}}>{periodTxs.filter(t=>t.tipo==="investimento").length} lançamentos</div>
+                  {/* − */}
+                  <div style={{fontSize:28,fontWeight:300,color:T.muted,padding:"0 4px",flexShrink:0}}>−</div>
+                  {/* Investimentos */}
+                  <div style={{textAlign:"center",padding:"0 20px"}}>
+                    <div style={{fontSize:9,color:T.muted,fontWeight:600,textTransform:"uppercase",letterSpacing:.7,marginBottom:6}}>Investimentos</div>
+                    <div style={{fontSize:28,fontWeight:800,color:T.blue,fontFamily:"'JetBrains Mono',monospace",letterSpacing:-1}}>{fmtShort(pInv)}</div>
+                    <div style={{fontSize:9,color:T.muted,marginTop:4}}>{periodTxs.filter(t=>t.tipo==="investimento").length} lançamentos</div>
                   </div>
-                  <div style={{background:"rgba(155,111,247,.08)",border:"1px solid rgba(155,111,247,.3)",borderRadius:14,padding:"14px 16px",position:"relative",overflow:"hidden"}}>
-                    <div style={{position:"absolute",top:10,right:12,fontSize:22,opacity:.15,fontWeight:900,color:T.purple,fontFamily:"monospace"}}>=</div>
-                    <div style={{fontSize:9,color:T.muted,fontWeight:600,textTransform:"uppercase",letterSpacing:.7,marginBottom:8}}>Saldo</div>
-                    <div style={{fontSize:22,fontWeight:800,color:pSaldo>=0?T.purple:T.red,fontFamily:"'JetBrains Mono',monospace",letterSpacing:-1,lineHeight:1}}>{fmt(pSaldo)}</div>
-                    <div style={{fontSize:9,color:pSaldo>=0?T.green:T.red,marginTop:6,fontWeight:700}}>{pSaldo>=0?"✓ Positivo":"✗ Atenção"}</div>
+                  {/* = */}
+                  <div style={{fontSize:28,fontWeight:300,color:T.muted,padding:"0 4px",flexShrink:0}}>=</div>
+                  {/* Saldo */}
+                  <div style={{textAlign:"center",padding:"0 20px",flex:1,borderLeft:`1px solid ${T.border}`,marginLeft:8}}>
+                    <div style={{fontSize:9,color:T.muted,fontWeight:600,textTransform:"uppercase",letterSpacing:.7,marginBottom:6}}>Saldo</div>
+                    <div style={{fontSize:32,fontWeight:900,color:pSaldo>=0?T.purple:T.red,fontFamily:"'JetBrains Mono',monospace",letterSpacing:-1}}>{fmtShort(pSaldo)}</div>
+                    <div style={{fontSize:9,color:pSaldo>=0?T.green:T.red,marginTop:4,fontWeight:700}}>{pSaldo>=0?"✓ Positivo":"✗ Atenção"}</div>
                   </div>
                 </div>
               </div>
 
-              {/* Linha 1: Gráfico de linhas evolução mensal */}
+              {/* Alertas */}
+              <div style={{display:"flex",flexDirection:"column",gap:7,marginBottom:14}}>
+                {txs.some(t=>t.categoria==="PLR / Remuneração Variável")&&(
+                  <div style={{background:"rgba(155,111,247,.08)",border:"1px solid rgba(155,111,247,.25)",borderRadius:10,padding:"9px 14px",display:"flex",alignItems:"center",gap:10}}>
+                    <span style={{fontSize:16}}>🎯</span>
+                    <span style={{fontSize:11}}><span style={{fontWeight:700,color:T.purple}}>PLR + Bônus Fev/26: </span><span style={{color:T.muted}}>R$573.031,42 creditados — considere destinar a investimentos e quitação antecipada do imóvel.</span></span>
+                  </div>
+                )}
+                {txs.some(t=>t.descricao.includes("Círculo Militar"))&&(
+                  <div style={{background:"rgba(77,124,246,.07)",border:"1px solid rgba(77,124,246,.2)",borderRadius:10,padding:"9px 14px",display:"flex",alignItems:"center",gap:10}}>
+                    <span style={{fontSize:16}}>ℹ️</span>
+                    <span style={{fontSize:11}}><span style={{fontWeight:700,color:T.accent}}>Círculo Militar: </span><span style={{color:T.muted}}>R$85.000 em Jan/26 (R$55k título + R$30k transferência) — registrado como Patrimônio / Clube.</span></span>
+                  </div>
+                )}
+              </div>
+
+              {/* Linha 1: Gráfico evolução mensal (largura total) */}
               <div style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:16,padding:20,marginBottom:12}}>
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:14,flexWrap:"wrap",gap:8}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:14}}>
                   <div>
                     <div style={{fontSize:13,fontWeight:700}}>Evolução Mensal — 2026</div>
                     <div style={{fontSize:10,color:T.muted,marginTop:2}}>Receitas vs Gastos vs Investimentos</div>
                   </div>
-                  <div style={{display:"flex",gap:12,fontSize:10,color:T.muted,flexWrap:"wrap"}}>
-                    {[{c:T.green,l:"Receita"},{c:T.red,l:"Gasto"},{c:T.blue,l:"Invest."}].map(x=>(
-                      <span key={x.l} style={{display:"flex",alignItems:"center",gap:4}}>
-                        <span style={{width:18,height:2,background:x.c,display:"inline-block",borderRadius:2,flexShrink:0}}/>
+                  <div style={{display:"flex",gap:14,fontSize:10,color:T.muted}}>
+                    {[{c:T.green,l:"Receita"},{c:T.red,l:"Gasto"},{c:T.blue,l:"Investimento"}].map(x=>(
+                      <span key={x.l} style={{display:"flex",alignItems:"center",gap:5}}>
+                        <span style={{width:12,height:12,borderRadius:3,background:x.c,display:"inline-block"}}/>
                         {x.l}
                       </span>
                     ))}
                   </div>
                 </div>
-                {barData.length===0
-                  ? <div style={{textAlign:"center",padding:"30px 0",color:T.muted,fontSize:11}}>Sem dados ainda</div>
-                  : (()=>{
-                      const W=300,H=isMobile?90:130,PAD=10;
-                      const allVals=barData.flatMap(d=>[d.rec,d.gas,d.inv]);
-                      const maxV=Math.max(...allVals,1);
-                      const n=barData.length;
-                      const xOf=i=>PAD+i*(W-PAD*2)/(n-1||1);
-                      const yOf=v=>PAD+(1-v/maxV)*(H-PAD*2);
-                      const polyPts=key=>barData.map((d,i)=>xOf(i)+","+yOf(d[key])).join(" ");
-                      return(
-                        <svg width="100%" viewBox={"0 0 "+(W)+" "+(H+20)} style={{display:"block",overflow:"visible"}}>
-                          {[0,0.25,0.5,0.75,1].map(p=>(
-                            <line key={p} x1={PAD} y1={yOf(maxV*p)} x2={W-PAD} y2={yOf(maxV*p)} stroke={T.border} strokeWidth={0.5} strokeDasharray="3,3"/>
+                <div style={{display:"flex",alignItems:"flex-end",gap:10,height:150}}>
+                  {barData.map((b,i)=>{
+                    const isSelected=dashPeriod!=="ano"&&b.m===dashPeriod;
+                    return(
+                      <div key={b.m} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:3,cursor:"pointer"}} onClick={()=>setDashPeriod(b.m)}>
+                        <div style={{width:"100%",display:"flex",gap:3,alignItems:"flex-end",height:118,justifyContent:"center"}}>
+                          {[{v:b.rec,c:T.green},{v:b.gas,c:T.red},{v:b.inv,c:T.blue}].map((bar,j)=>(
+                            <div key={j} title={fmt(bar.v)} style={{flex:1,background:bar.c,borderRadius:"3px 3px 0 0",height:`${barMax>0?(bar.v/barMax)*100:0}%`,minHeight:bar.v>0?4:0,opacity:isSelected?1:dashPeriod==="ano"?.75:.45,transition:"all .2s"}}/>
                           ))}
-                          {[{k:"rec",c:T.green},{k:"gas",c:T.red},{k:"inv",c:T.blue}].map(({k,c})=>(
-                            <polyline key={k} points={polyPts(k)} fill="none" stroke={c} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" opacity={0.9}/>
-                          ))}
-                          {barData.map((d,i)=>[
-                            ...["rec","gas","inv"].map((k,ki)=>{
-                              const cols=[T.green,T.red,T.blue];
-                              const sel=dashPeriod!=="ano"&&d.m===dashPeriod;
-                              return <circle key={k+i} cx={xOf(i)} cy={yOf(d[k])} r={sel?5:3} fill={cols[ki]} stroke={T.card} strokeWidth={1.5} style={{cursor:"pointer"}} onClick={()=>setDashPeriod(d.m)}/>;
-                            })
-                          ])}
-                          {barData.map((d,i)=>(
-                            <text key={d.m} x={xOf(i)} y={H+16} textAnchor="middle" fontSize={8}
-                              fill={dashPeriod!=="ano"&&d.m===dashPeriod?T.accent:T.muted}
-                              fontWeight={dashPeriod!=="ano"&&d.m===dashPeriod?"700":"400"}
-                              style={{cursor:"pointer",userSelect:"none"}}
-                              onClick={()=>setDashPeriod(d.m)}>
-                              {MONTH_NAMES[+d.m-1]}
-                            </text>
-                          ))}
-                        </svg>
-                      );
-                    })()
-                }
+                        </div>
+                        <div style={{fontSize:8,color:isSelected?T.accent:T.muted,fontWeight:isSelected?700:400,textTransform:"uppercase",letterSpacing:.5}}>{MONTH_NAMES[+b.m-1]}</div>
+                      </div>
+                    );
+                  })}
+                  {barData.length===0&&<div style={{flex:1,textAlign:"center",color:T.muted,fontSize:11,paddingTop:40}}>Sem dados ainda</div>}
+                </div>
               </div>
 
               {/* Linha 2: Patrimônio (esq) + Saúde Financeira (dir) */}
-              <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1.4fr 1fr",gap:12,marginBottom:12}}>
+              <div style={{display:"grid",gridTemplateColumns:"1.4fr 1fr",gap:12,marginBottom:12}}>
 
                 {/* Barras patrimônio */}
                 <div style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:16,padding:20}}>
@@ -1642,7 +1341,7 @@ function App(){
                     </div>
                     <div>
                       <div style={{fontSize:9,color:T.muted,textAlign:"right"}}>Total bruto</div>
-                      <div style={{fontSize:isMobile?12:14,fontWeight:800,color:T.green,fontFamily:"'JetBrains Mono',monospace",whiteSpace:"nowrap"}}>{fmtShort(patTotal)}</div>
+                      <div style={{fontSize:14,fontWeight:800,color:T.green,fontFamily:"'JetBrains Mono',monospace"}}>{fmtShort(patTotal)}</div>
                     </div>
                   </div>
                   <div style={{display:"flex",flexDirection:"column",gap:9}}>
@@ -1651,8 +1350,8 @@ function App(){
                         <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",fontSize:10,marginBottom:4}}>
                           <span style={{fontWeight:600}}>{p.l}</span>
                           <div style={{textAlign:"right"}}>
-                            <span style={{fontWeight:800,color:p.c,fontFamily:"'JetBrains Mono',monospace",fontSize:isMobile?11:13}}>{fmtShort(p.v)}</span>
-                            {!isMobile&&<span style={{fontSize:8,color:T.muted,marginLeft:5}}>{(p.v/patTotal*100).toFixed(1)}%</span>}
+                            <span style={{fontWeight:800,color:p.c,fontFamily:"'JetBrains Mono',monospace"}}>{fmtShort(p.v)}</span>
+                            <span style={{fontSize:8,color:T.muted,marginLeft:5}}>{(p.v/patTotal*100).toFixed(1)}%</span>
                           </div>
                         </div>
                         <div style={{height:7,background:T.border,borderRadius:99}}>
@@ -1700,52 +1399,16 @@ function App(){
                   <div style={{fontSize:13,fontWeight:700}}>Últimos Lançamentos <span style={{fontSize:10,color:T.muted,fontWeight:400}}>— {periodoLabel}</span></div>
                   <button style={{...btnS,...btnO,fontSize:10,padding:"4px 10px"}} onClick={()=>setTab("transacoes")}>Ver todos →</button>
                 </div>
-                <div style={{display:"flex",flexDirection:"column",gap:0}}>
-                  {periodTxs.slice().sort((a,b)=>b.data.localeCompare(a.data)).slice(0,8).map(t=>(
-                    <div key={t.id} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 0",borderBottom:`1px solid ${T.border}`}}>
-                      <div style={{fontSize:9,color:T.muted,fontFamily:"'JetBrains Mono',monospace",flexShrink:0,width:36,lineHeight:1.4}}>
-                        {t.data.slice(5).replace("-","/")}
-                        <div>/{t.data.slice(2,4)}</div>
-                      </div>
-                      <div style={{flex:1,minWidth:0}}>
-                        <div style={{fontSize:11,fontWeight:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{t.descricao}</div>
-                        <div style={{fontSize:9,color:T.muted,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{t.categoria}</div>
-                      </div>
-                      <Pill tipo={t.tipo}/>
-                      <div style={{flexShrink:0,fontFamily:"'JetBrains Mono',monospace",fontWeight:700,fontSize:11,color:t.tipo==="receita"?T.green:t.tipo==="investimento"?T.blue:T.red,textAlign:"right",minWidth:52}}>
-                        {t.tipo==="receita"?"+":"-"}{fmtShort(t.valor)}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Glossário Saúde Financeira */}
-              <div style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:16,padding:20,marginTop:12}}>
-                <div style={{fontSize:13,fontWeight:700,marginBottom:14}}>📘 Entenda os Indicadores</div>
-                <div style={{display:"flex",flexDirection:"column",gap:14}}>
-                  {[
-                    { icon:"📈", title:"Taxa de Investimento", meta:"Meta ≥ 20%", color:T.green,
-                      desc:"Percentual da renda bruta destinado a investimentos. Mede o quanto você está construindo patrimônio. Abaixo de 20% indica que a acumulação está lenta em relação à renda." },
-                    { icon:"💳", title:"Comprometimento de Renda", meta:"Meta ≤ 70%", color:T.amber,
-                      desc:"Parcela da renda consumida por gastos fixos e variáveis. Acima de 70% deixa pouca margem para imprevistos e investimentos." },
-                    { icon:"💰", title:"Margem de Poupança", meta:"Meta ≥ 10%", color:T.blue,
-                      desc:"Saldo restante após todos os gastos e investimentos, dividido pela receita. Representa a folga financeira do período." },
-                    { icon:"💧", title:"Índice de Liquidez", meta:"Meta ≥ 1×", color:T.purple,
-                      desc:"Quanto meses de gastos você consegue cobrir com os ativos líquidos (conta corrente + renda fixa). Meta mínima é 1× — o ideal é manter 3× a 6× para uma reserva de emergência sólida." },
-                  ].map(g=>(
-                    <div key={g.title} style={{paddingBottom:14,borderBottom:`1px solid ${T.border}`}}>
-                      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:5}}>
-                        <span style={{fontSize:16}}>{g.icon}</span>
-                        <div>
-                          <div style={{fontSize:12,fontWeight:700,color:g.color}}>{g.title}</div>
-                          <div style={{fontSize:9,color:T.muted,letterSpacing:.4}}>{g.meta}</div>
-                        </div>
-                      </div>
-                      <div style={{fontSize:11,color:T.muted,lineHeight:1.6}}>{g.desc}</div>
-                    </div>
-                  ))}
-                </div>
+                <table style={{width:"100%",borderCollapse:"collapse"}}>
+                  <tbody>{periodTxs.slice().sort((a,b)=>b.data.localeCompare(a.data)).slice(0,8).map(t=>(
+                    <tr key={t.id} style={{borderBottom:`1px solid ${T.border}`}}>
+                      <td style={{padding:"6px 0",width:68,fontSize:9,color:T.muted,fontFamily:"'JetBrains Mono',monospace"}}>{t.data.slice(5).replace("-","/")} /{t.data.slice(2,4)}</td>
+                      <td style={{padding:"6px 8px"}}><div style={{fontSize:11,fontWeight:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:230}}>{t.descricao}</div><div style={{fontSize:9,color:T.muted}}>{t.categoria}</div></td>
+                      <td style={{padding:"6px 4px"}}><Pill tipo={t.tipo}/></td>
+                      <td style={{textAlign:"right",padding:"6px 0",fontFamily:"'JetBrains Mono',monospace",fontWeight:700,fontSize:11,color:t.tipo==="receita"?T.green:t.tipo==="investimento"?T.blue:T.red,whiteSpace:"nowrap"}}>{t.tipo==="receita"?"+":"-"}{fmtShort(t.valor)}</td>
+                    </tr>
+                  ))}</tbody>
+                </table>
               </div>
             </>);
           })()}
@@ -1755,10 +1418,10 @@ function App(){
         {tab==="transacoes"&&<>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:18}}>
             <h1 style={{fontSize:22,fontWeight:800,letterSpacing:-1}}>Transações <span style={{fontSize:14,color:T.muted,fontWeight:400}}>({filtered.length}/{txs.length})</span></h1>
-            {!isMobile&&<button style={{...btnP,...btnS,padding:"8px 14px"}} onClick={()=>{setEditId(null);setForm({tipo:"gasto",categoria:"Alimentação",descricao:"",valor:"",data:today(),origem:"manual",recorrente:false,recorrencia:"mensal",fonte:""});setModal("form");}}>+ Novo</button>}
+            <button style={{...btnP,...btnS,padding:"8px 14px"}} onClick={()=>{setEditId(null);setForm({tipo:"gasto",categoria:"Alimentação",descricao:"",valor:"",data:today(),origem:"manual",recorrente:false,recorrencia:"mensal",fonte:""});setModal("form");}}>+ Novo</button>
           </div>
           <div style={{...card,marginBottom:12}}>
-            <div style={{display:"flex",gap:8,flexWrap:"wrap",fontSize:isMobile?11:13}}>
+            <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
               <input style={{...inp,flex:3,minWidth:160}} placeholder="🔍 Buscar..." value={searchQ} onChange={e=>setSearchQ(e.target.value)}/>
               <select style={{...sel,flex:1,minWidth:100}} value={filterTipo} onChange={e=>setFilterTipo(e.target.value)}>
                 <option value="todos">Todos os tipos</option><option value="receita">Receitas</option><option value="gasto">Gastos</option><option value="investimento">Investimentos</option></select>
@@ -1772,20 +1435,6 @@ function App(){
                 <option value="todas">Todas as fontes</option>
                 {allFontes.map(f=><option key={f}>{f}</option>)}</select>
             </div>
-            {/* Subtotal do filtro */}
-            {(()=>{
-              const fRec=filtered.filter(t=>t.tipo==="receita").reduce((a,b)=>a+b.valor,0);
-              const fGas=filtered.filter(t=>t.tipo==="gasto").reduce((a,b)=>a+b.valor,0);
-              const fInv=filtered.filter(t=>t.tipo==="investimento").reduce((a,b)=>a+b.valor,0);
-              const fSaldo=fRec-fGas-fInv;
-              return(<div style={{marginTop:12,paddingTop:12,borderTop:`1px solid ${T.border}`,display:"flex",gap:isMobile?8:24,flexWrap:"wrap",alignItems:"center"}}>
-                <span style={{fontSize:10,color:T.muted,fontWeight:600,textTransform:"uppercase",letterSpacing:.6}}>{filtered.length} resultados</span>
-                {fRec>0&&<span style={{fontSize:11,color:T.green,fontWeight:700,fontFamily:"'JetBrains Mono',monospace"}}>↑ {fmt(fRec)}</span>}
-                {fGas>0&&<span style={{fontSize:11,color:T.red,fontWeight:700,fontFamily:"'JetBrains Mono',monospace"}}>↓ {fmt(fGas)}</span>}
-                {fInv>0&&<span style={{fontSize:11,color:T.blue,fontWeight:700,fontFamily:"'JetBrains Mono',monospace"}}>◈ {fmt(fInv)}</span>}
-                <span style={{fontSize:11,color:fSaldo>=0?T.purple:T.red,fontWeight:800,fontFamily:"'JetBrains Mono',monospace",marginLeft:"auto"}}>= {fmt(fSaldo)}</span>
-              </div>);
-            })()}
           </div>
           <div style={card}>
             <div style={{overflowX:"auto"}}>
@@ -1820,7 +1469,7 @@ function App(){
         </>}
 
         {/* ─── PATRIMÔNIO ─── */}
-        {tab==="patrimonio"&&<PatrimonioView isMobile={isMobile}/>}
+        {tab==="patrimonio"&&<PatrimonioView/>}
 
         {/* ─── HISTÓRICO ─── */}
         {tab==="historico"&&<>
@@ -1980,19 +1629,6 @@ function App(){
         </>}
 
       </main>
-
-      {/* ── MOBILE BOTTOM NAV ── */}
-      <PrintReport txs={txs} pat={pat} T={T} fmt={fmt} fmtShort={fmtShort} MONTH_NAMES={MONTH_NAMES} competencia={competencia}/>
-
-      {isMobile&&<nav style={{position:"fixed",bottom:0,left:0,right:0,background:T.surface,borderTop:`1px solid ${T.border}`,display:"flex",alignItems:"stretch",zIndex:50,paddingBottom:"env(safe-area-inset-bottom)",height:"calc(60px + env(safe-area-inset-bottom))"}}>
-        {NAVS.map(n=>(
-          <button key={n.id} onClick={()=>setTab(n.id)} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:3,background:"transparent",border:"none",color:tab===n.id?T.accent:T.muted,cursor:"pointer",padding:"8px 0",position:"relative"}}>
-            {tab===n.id&&<div style={{position:"absolute",top:0,left:"20%",right:"20%",height:2,background:T.accent,borderRadius:"0 0 2px 2px"}}/>}
-            <span style={{fontSize:18,lineHeight:1}}>{n.icon}</span>
-            <span style={{fontSize:8,fontWeight:tab===n.id?700:400,letterSpacing:.3}}>{n.label}</span>
-          </button>
-        ))}
-      </nav>}
     </div>
 
     {modal==="reclassify"&&selectedTx&&<ReclassifyModal tx={selectedTx} allTx={txs} categories={categories} onConfirm={doReclassify} onClose={()=>{setModal(null);setSelectedTx(null);}}/>}
