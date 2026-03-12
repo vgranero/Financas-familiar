@@ -526,6 +526,61 @@ const PATRIMONIO_SEED = {
   ],
 };
 
+function LineChart(props) {
+  var data=props.data, T=props.T, MONTH_NAMES=props.MONTH_NAMES;
+  var dashPeriod=props.dashPeriod, setDashPeriod=props.setDashPeriod, isMobile=props.isMobile;
+  if (!data || data.length === 0) {
+    return <div style={{textAlign:"center",padding:"30px 0",color:T.muted,fontSize:11}}>Sem dados ainda</div>;
+  }
+  var W=300, H=isMobile?90:130, PAD=12;
+  var allVals=[];
+  for(var i=0;i<data.length;i++){
+    allVals.push(data[i].rec,data[i].gas,data[i].inv);
+  }
+  var maxV=Math.max.apply(null,allVals.concat([1]));
+  var n=data.length;
+  var xs=[], recPts=[], gasPts=[], invPts=[];
+  for(var j=0;j<n;j++){
+    var x=PAD+j*(W-PAD*2)/(n>1?n-1:1);
+    xs.push(x);
+    recPts.push(x+","+(PAD+(1-data[j].rec/maxV)*(H-PAD*2)));
+    gasPts.push(x+","+(PAD+(1-data[j].gas/maxV)*(H-PAD*2)));
+    invPts.push(x+","+(PAD+(1-data[j].inv/maxV)*(H-PAD*2)));
+  }
+  var gridY=[0,0.25,0.5,0.75,1];
+  return (
+    <svg width="100%" viewBox={"0 0 "+W+" "+(H+20)} style={{display:"block",overflow:"visible"}}>
+      {gridY.map(function(p){
+        var gy=PAD+(1-p)*(H-PAD*2);
+        return <line key={p} x1={PAD} y1={gy} x2={W-PAD} y2={gy} stroke={T.border} strokeWidth={0.5} strokeDasharray="3,3"/>;
+      })}
+      <polyline points={recPts.join(" ")} fill="none" stroke={T.green} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round"/>
+      <polyline points={gasPts.join(" ")} fill="none" stroke={T.red} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round"/>
+      <polyline points={invPts.join(" ")} fill="none" stroke={T.blue} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round"/>
+      {data.map(function(d,i){
+        var active=dashPeriod!=="ano"&&d.m===dashPeriod;
+        var x=xs[i];
+        var yr=PAD+(1-d.rec/maxV)*(H-PAD*2);
+        var yg=PAD+(1-d.gas/maxV)*(H-PAD*2);
+        var yv=PAD+(1-d.inv/maxV)*(H-PAD*2);
+        return (
+          <g key={d.m} onClick={function(){setDashPeriod(d.m);}} style={{cursor:"pointer"}}>
+            <circle cx={x} cy={yr} r={active?5:3} fill={T.green} stroke={T.card} strokeWidth={1.5}/>
+            <circle cx={x} cy={yg} r={active?5:3} fill={T.red} stroke={T.card} strokeWidth={1.5}/>
+            <circle cx={x} cy={yv} r={active?5:3} fill={T.blue} stroke={T.card} strokeWidth={1.5}/>
+            <text x={x} y={H+16} textAnchor="middle" fontSize={8}
+              fill={active?T.accent:T.muted}
+              fontWeight={active?"700":"400"}
+              style={{userSelect:"none"}}>
+              {MONTH_NAMES[(+d.m.slice(-2))-1]}
+            </text>
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
 function PatrimonioView({ onAddAtivo }) {
   const [pat, setPat] = useState(() => {
     try { const s = localStorage.getItem("financas_pat"); return s ? JSON.parse(s) : PATRIMONIO_SEED; } catch { return PATRIMONIO_SEED; }
@@ -995,7 +1050,8 @@ function App(){
   const [histMode,setHistMode]=useState("mensal");
   const [histMetric,setHistMetric]=useState("gasto");
   const [dashPeriod,setDashPeriod]=useState("02");
-  const [sideOpen,setSideOpen]=useState(false); // "01".."12" or "ano"
+  const [sideOpen,setSideOpen]=useState(false);
+  const isMobile=typeof window!=="undefined"&&window.innerWidth<=768; // "01".."12" or "ano"
   const [aiChat,setAiChat]=useState([]);
   const [chatInput,setChatInput]=useState("");
   const [chatLoading,setChatLoading]=useState(false);
@@ -1155,8 +1211,8 @@ function App(){
   return(<>
     <div style={{fontFamily:"'Sora',sans-serif",minHeight:"100vh",background:T.bg,color:T.text,display:"flex"}}>
 
-      {/* Sidebar — colapsável */}
-      <aside style={{width:sideOpen?200:60,background:T.surface,borderRight:`1px solid ${T.border}`,display:"flex",flexDirection:"column",position:"fixed",top:0,left:0,bottom:0,zIndex:50,transition:"width .2s ease",overflow:"hidden"}}>
+      {/* ── DESKTOP SIDEBAR ── */}
+      {!isMobile&&<aside style={{width:sideOpen?200:60,background:T.surface,borderRight:`1px solid ${T.border}`,display:"flex",flexDirection:"column",position:"fixed",top:0,left:0,bottom:0,zIndex:50,transition:"width .2s ease",overflow:"hidden"}}>
         <div style={{padding:sideOpen?"22px 20px 18px":"18px 10px",borderBottom:`1px solid ${T.border}`,display:"flex",alignItems:"center",justifyContent:sideOpen?"space-between":"center",minHeight:64}}>
           {sideOpen&&<div>
             <div style={{fontSize:15,fontWeight:800,letterSpacing:-.5,whiteSpace:"nowrap"}}>💰 FinançasFam</div>
@@ -1173,9 +1229,16 @@ function App(){
         <div style={{padding:"10px 8px",borderTop:`1px solid ${T.border}`,textAlign:"center"}}>
           <div style={{fontSize:9,color:T.muted,letterSpacing:.7,textTransform:"uppercase"}}>{sideOpen?`${txs.length} lançamentos`:"≡"}</div>
         </div>
-      </aside>
+      </aside>}
 
-      <main style={{marginLeft:sideOpen?200:60,flex:1,padding:24,minHeight:"100vh",transition:"margin-left .2s ease"}}>
+      {/* ── MOBILE TOP BAR ── */}
+      {isMobile&&<div style={{position:"fixed",top:0,left:0,right:0,background:T.surface,borderBottom:`1px solid ${T.border}`,display:"flex",alignItems:"center",justifyContent:"space-between",padding:"0 16px",paddingTop:"env(safe-area-inset-top)",height:"calc(52px + env(safe-area-inset-top))",zIndex:50}}>
+        <div style={{fontSize:14,fontWeight:800,letterSpacing:-.5}}>💰 FinançasFam</div>
+        <div style={{fontSize:10,color:T.muted}}>{NAVS.find(n=>n.id===tab)?.label||""}</div>
+        <button style={{...btnP,...btnS,padding:"6px 12px",fontSize:11}} onClick={()=>{setEditId(null);setForm({tipo:"gasto",categoria:"Alimentação",descricao:"",valor:"",data:today(),origem:"manual",recorrente:false,recorrencia:"mensal",fonte:""});setModal("form");}}>+</button>
+      </div>}
+
+      <main style={{marginLeft:isMobile?0:sideOpen?200:60,flex:1,padding:isMobile?"12px":"24px",paddingTop:isMobile?"calc(64px + env(safe-area-inset-top))":"24px",paddingBottom:isMobile?"calc(80px + env(safe-area-inset-bottom))":"24px",minHeight:"100vh",transition:"margin-left .2s ease",overflowX:"hidden"}}>
 
         {/* ─── DASHBOARD ─── */}
         {tab==="dashboard"&&<>
@@ -1217,9 +1280,7 @@ function App(){
               const mt=txs.filter(t=>competencia(t)===`2026-${m}`);
               return{m,rec:mt.filter(t=>t.tipo==="receita").reduce((a,b)=>a+b.valor,0),gas:mt.filter(t=>t.tipo==="gasto").reduce((a,b)=>a+b.valor,0),inv:mt.filter(t=>t.tipo==="investimento").reduce((a,b)=>a+b.valor,0)};
             }).filter(d=>d.rec>0||d.gas>0);
-            const barMax=Math.max(...barData.map(d=>Math.max(d.rec,d.gas,d.inv)),1);
-
-            // Patrimônio bars
+                        // Patrimônio bars
             const patrimoData=[
               {l:"Renda Fixa / CDB",v:996715.87,c:"#26c67a"},
               {l:"Tesouro Direto",v:138062.02,c:"#9b6ff7"},
@@ -1242,93 +1303,52 @@ function App(){
             ];
 
             return(<>
-              {/* Equação financeira */}
-              <div style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:16,padding:"18px 24px",marginBottom:14}}>
-                <div style={{fontSize:9,fontWeight:700,color:T.muted,textTransform:"uppercase",letterSpacing:.8,marginBottom:14}}>{periodoLabel} — Fluxo de Caixa</div>
-                <div style={{display:"flex",alignItems:"center",gap:0,flexWrap:"wrap"}}>
-                  {/* Receitas */}
-                  <div style={{textAlign:"center",padding:"0 20px"}}>
-                    <div style={{fontSize:9,color:T.muted,fontWeight:600,textTransform:"uppercase",letterSpacing:.7,marginBottom:6}}>Receitas</div>
-                    <div style={{fontSize:28,fontWeight:800,color:T.green,fontFamily:"'JetBrains Mono',monospace",letterSpacing:-1}}>{fmtShort(pRec)}</div>
-                    <div style={{fontSize:9,color:T.muted,marginTop:4}}>{periodTxs.filter(t=>t.tipo==="receita").length} lançamentos</div>
+                            {/* Fluxo de Caixa */}
+              <div style={{marginBottom:14}}>
+                <div style={{fontSize:9,fontWeight:700,color:T.muted,textTransform:"uppercase",letterSpacing:.8,marginBottom:10}}>{periodoLabel} — Fluxo de Caixa</div>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+                  <div style={{background:T.card,border:"1px solid "+T.border,borderRadius:14,padding:"14px 16px",position:"relative",overflow:"hidden"}}>
+                    <div style={{position:"absolute",top:10,right:12,fontSize:22,opacity:.1,fontFamily:"monospace",color:T.green}}>↑</div>
+                    <div style={{fontSize:9,color:T.muted,fontWeight:600,textTransform:"uppercase",letterSpacing:.7,marginBottom:8}}>Receitas</div>
+                    <div style={{fontSize:22,fontWeight:800,color:T.green,fontFamily:"'JetBrains Mono',monospace",letterSpacing:-1,lineHeight:1}}>{fmt(pRec)}</div>
+                    <div style={{fontSize:9,color:T.muted,marginTop:6}}>{periodTxs.filter(t=>t.tipo==="receita").length} lançamentos</div>
                   </div>
-                  {/* − */}
-                  <div style={{fontSize:28,fontWeight:300,color:T.muted,padding:"0 4px",flexShrink:0}}>−</div>
-                  {/* Gastos */}
-                  <div style={{textAlign:"center",padding:"0 20px"}}>
-                    <div style={{fontSize:9,color:T.muted,fontWeight:600,textTransform:"uppercase",letterSpacing:.7,marginBottom:6}}>Gastos</div>
-                    <div style={{fontSize:28,fontWeight:800,color:T.red,fontFamily:"'JetBrains Mono',monospace",letterSpacing:-1}}>{fmtShort(pGas)}</div>
-                    <div style={{fontSize:9,color:T.muted,marginTop:4}}>{periodTxs.filter(t=>t.tipo==="gasto").length} lançamentos</div>
+                  <div style={{background:T.card,border:"1px solid "+T.border,borderRadius:14,padding:"14px 16px",position:"relative",overflow:"hidden"}}>
+                    <div style={{position:"absolute",top:10,right:12,fontSize:22,opacity:.1,fontFamily:"monospace",color:T.red}}>↓</div>
+                    <div style={{fontSize:9,color:T.muted,fontWeight:600,textTransform:"uppercase",letterSpacing:.7,marginBottom:8}}>Gastos</div>
+                    <div style={{fontSize:22,fontWeight:800,color:T.red,fontFamily:"'JetBrains Mono',monospace",letterSpacing:-1,lineHeight:1}}>{fmt(pGas)}</div>
+                    <div style={{fontSize:9,color:T.muted,marginTop:6}}>{periodTxs.filter(t=>t.tipo==="gasto").length} lançamentos</div>
                   </div>
-                  {/* − */}
-                  <div style={{fontSize:28,fontWeight:300,color:T.muted,padding:"0 4px",flexShrink:0}}>−</div>
-                  {/* Investimentos */}
-                  <div style={{textAlign:"center",padding:"0 20px"}}>
-                    <div style={{fontSize:9,color:T.muted,fontWeight:600,textTransform:"uppercase",letterSpacing:.7,marginBottom:6}}>Investimentos</div>
-                    <div style={{fontSize:28,fontWeight:800,color:T.blue,fontFamily:"'JetBrains Mono',monospace",letterSpacing:-1}}>{fmtShort(pInv)}</div>
-                    <div style={{fontSize:9,color:T.muted,marginTop:4}}>{periodTxs.filter(t=>t.tipo==="investimento").length} lançamentos</div>
+                  <div style={{background:T.card,border:"1px solid "+T.border,borderRadius:14,padding:"14px 16px",position:"relative",overflow:"hidden"}}>
+                    <div style={{position:"absolute",top:10,right:12,fontSize:22,opacity:.1,fontFamily:"monospace",color:T.blue}}>◈</div>
+                    <div style={{fontSize:9,color:T.muted,fontWeight:600,textTransform:"uppercase",letterSpacing:.7,marginBottom:8}}>Investimentos</div>
+                    <div style={{fontSize:22,fontWeight:800,color:T.blue,fontFamily:"'JetBrains Mono',monospace",letterSpacing:-1,lineHeight:1}}>{fmt(pInv)}</div>
+                    <div style={{fontSize:9,color:T.muted,marginTop:6}}>{periodTxs.filter(t=>t.tipo==="investimento").length} lançamentos</div>
                   </div>
-                  {/* = */}
-                  <div style={{fontSize:28,fontWeight:300,color:T.muted,padding:"0 4px",flexShrink:0}}>=</div>
-                  {/* Saldo */}
-                  <div style={{textAlign:"center",padding:"0 20px",flex:1,borderLeft:`1px solid ${T.border}`,marginLeft:8}}>
-                    <div style={{fontSize:9,color:T.muted,fontWeight:600,textTransform:"uppercase",letterSpacing:.7,marginBottom:6}}>Saldo</div>
-                    <div style={{fontSize:32,fontWeight:900,color:pSaldo>=0?T.purple:T.red,fontFamily:"'JetBrains Mono',monospace",letterSpacing:-1}}>{fmtShort(pSaldo)}</div>
-                    <div style={{fontSize:9,color:pSaldo>=0?T.green:T.red,marginTop:4,fontWeight:700}}>{pSaldo>=0?"✓ Positivo":"✗ Atenção"}</div>
+                  <div style={{background:"rgba(155,111,247,.08)",border:"1px solid rgba(155,111,247,.3)",borderRadius:14,padding:"14px 16px",position:"relative",overflow:"hidden"}}>
+                    <div style={{position:"absolute",top:10,right:12,fontSize:22,opacity:.15,fontFamily:"monospace",color:T.purple}}>=</div>
+                    <div style={{fontSize:9,color:T.muted,fontWeight:600,textTransform:"uppercase",letterSpacing:.7,marginBottom:8}}>Saldo</div>
+                    <div style={{fontSize:22,fontWeight:800,color:pSaldo>=0?T.purple:T.red,fontFamily:"'JetBrains Mono',monospace",letterSpacing:-1,lineHeight:1}}>{fmt(pSaldo)}</div>
+                    <div style={{fontSize:9,color:pSaldo>=0?T.green:T.red,marginTop:6,fontWeight:700}}>{pSaldo>=0?"✓ Positivo":"✗ Atenção"}</div>
                   </div>
                 </div>
               </div>
 
-              {/* Alertas */}
-              <div style={{display:"flex",flexDirection:"column",gap:7,marginBottom:14}}>
-                {txs.some(t=>t.categoria==="PLR / Remuneração Variável")&&(
-                  <div style={{background:"rgba(155,111,247,.08)",border:"1px solid rgba(155,111,247,.25)",borderRadius:10,padding:"9px 14px",display:"flex",alignItems:"center",gap:10}}>
-                    <span style={{fontSize:16}}>🎯</span>
-                    <span style={{fontSize:11}}><span style={{fontWeight:700,color:T.purple}}>PLR + Bônus Fev/26: </span><span style={{color:T.muted}}>R$573.031,42 creditados — considere destinar a investimentos e quitação antecipada do imóvel.</span></span>
-                  </div>
-                )}
-                {txs.some(t=>t.descricao.includes("Círculo Militar"))&&(
-                  <div style={{background:"rgba(77,124,246,.07)",border:"1px solid rgba(77,124,246,.2)",borderRadius:10,padding:"9px 14px",display:"flex",alignItems:"center",gap:10}}>
-                    <span style={{fontSize:16}}>ℹ️</span>
-                    <span style={{fontSize:11}}><span style={{fontWeight:700,color:T.accent}}>Círculo Militar: </span><span style={{color:T.muted}}>R$85.000 em Jan/26 (R$55k título + R$30k transferência) — registrado como Patrimônio / Clube.</span></span>
-                  </div>
-                )}
-              </div>
-
-              {/* Linha 1: Gráfico evolução mensal (largura total) */}
+                            {/* Linha 1: Gráfico evolução mensal */}
               <div style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:16,padding:20,marginBottom:12}}>
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:14}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:14,flexWrap:"wrap",gap:8}}>
                   <div>
                     <div style={{fontSize:13,fontWeight:700}}>Evolução Mensal — 2026</div>
                     <div style={{fontSize:10,color:T.muted,marginTop:2}}>Receitas vs Gastos vs Investimentos</div>
                   </div>
                   <div style={{display:"flex",gap:14,fontSize:10,color:T.muted}}>
-                    {[{c:T.green,l:"Receita"},{c:T.red,l:"Gasto"},{c:T.blue,l:"Investimento"}].map(x=>(
-                      <span key={x.l} style={{display:"flex",alignItems:"center",gap:5}}>
-                        <span style={{width:12,height:12,borderRadius:3,background:x.c,display:"inline-block"}}/>
-                        {x.l}
-                      </span>
-                    ))}
+                    <span style={{display:"flex",alignItems:"center",gap:4}}><span style={{width:16,height:2,background:T.green,display:"inline-block",borderRadius:2}}/> Receita</span>
+                    <span style={{display:"flex",alignItems:"center",gap:4}}><span style={{width:16,height:2,background:T.red,display:"inline-block",borderRadius:2}}/> Gasto</span>
+                    <span style={{display:"flex",alignItems:"center",gap:4}}><span style={{width:16,height:2,background:T.blue,display:"inline-block",borderRadius:2}}/> Invest.</span>
                   </div>
                 </div>
-                <div style={{display:"flex",alignItems:"flex-end",gap:10,height:150}}>
-                  {barData.map((b,i)=>{
-                    const isSelected=dashPeriod!=="ano"&&b.m===dashPeriod;
-                    return(
-                      <div key={b.m} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:3,cursor:"pointer"}} onClick={()=>setDashPeriod(b.m)}>
-                        <div style={{width:"100%",display:"flex",gap:3,alignItems:"flex-end",height:118,justifyContent:"center"}}>
-                          {[{v:b.rec,c:T.green},{v:b.gas,c:T.red},{v:b.inv,c:T.blue}].map((bar,j)=>(
-                            <div key={j} title={fmt(bar.v)} style={{flex:1,background:bar.c,borderRadius:"3px 3px 0 0",height:`${barMax>0?(bar.v/barMax)*100:0}%`,minHeight:bar.v>0?4:0,opacity:isSelected?1:dashPeriod==="ano"?.75:.45,transition:"all .2s"}}/>
-                          ))}
-                        </div>
-                        <div style={{fontSize:8,color:isSelected?T.accent:T.muted,fontWeight:isSelected?700:400,textTransform:"uppercase",letterSpacing:.5}}>{MONTH_NAMES[+b.m-1]}</div>
-                      </div>
-                    );
-                  })}
-                  {barData.length===0&&<div style={{flex:1,textAlign:"center",color:T.muted,fontSize:11,paddingTop:40}}>Sem dados ainda</div>}
-                </div>
+                <LineChart data={barData} T={T} MONTH_NAMES={MONTH_NAMES} dashPeriod={dashPeriod} setDashPeriod={setDashPeriod} isMobile={isMobile}/>
               </div>
-
               {/* Linha 2: Patrimônio (esq) + Saúde Financeira (dir) */}
               <div style={{display:"grid",gridTemplateColumns:"1.4fr 1fr",gap:12,marginBottom:12}}>
 
@@ -1629,6 +1649,15 @@ function App(){
         </>}
 
       </main>
+      {isMobile&&<nav style={{position:"fixed",bottom:0,left:0,right:0,background:T.surface,borderTop:"1px solid "+T.border,display:"flex",alignItems:"stretch",zIndex:50,paddingBottom:"env(safe-area-inset-bottom)"}}>
+        {NAVS.map(n=>(
+          <button key={n.id} onClick={()=>setTab(n.id)} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:3,background:"transparent",border:"none",color:tab===n.id?T.accent:T.muted,cursor:"pointer",padding:"8px 0",position:"relative",minHeight:56}}>
+            {tab===n.id&&<div style={{position:"absolute",top:0,left:"20%",right:"20%",height:2,background:T.accent,borderRadius:"0 0 2px 2px"}}/>}
+            <span style={{fontSize:18,lineHeight:1}}>{n.icon}</span>
+            <span style={{fontSize:8,fontWeight:tab===n.id?700:400,letterSpacing:.3}}>{n.label}</span>
+          </button>
+        ))}
+      </nav>}
     </div>
 
     {modal==="reclassify"&&selectedTx&&<ReclassifyModal tx={selectedTx} allTx={txs} categories={categories} onConfirm={doReclassify} onClose={()=>{setModal(null);setSelectedTx(null);}}/>}
