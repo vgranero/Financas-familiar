@@ -526,6 +526,94 @@ const PATRIMONIO_SEED = {
   ],
 };
 
+
+function BarChartRecGas(props) {
+  var data=props.data, T=props.T, MONTH_NAMES=props.MONTH_NAMES;
+  if (!data || data.length === 0) {
+    return <div style={{textAlign:"center",padding:"20px 0",color:T.muted,fontSize:11}}>Sem dados</div>;
+  }
+  var W=300, H=70, PAD=8, barW=18, gap=6;
+  var maxV=1;
+  for(var i=0;i<data.length;i++){
+    if(data[i].rec>maxV) maxV=data[i].rec;
+    if(data[i].gas>maxV) maxV=data[i].gas;
+  }
+  var n=data.length;
+  var groupW=(barW*2+gap);
+  var totalW=n*groupW+(n-1)*10+PAD*2;
+  var W2=Math.max(totalW,W);
+  function yOf(v){ return PAD+(1-v/maxV)*(H-PAD); }
+  function xRec(i){ return PAD+i*(groupW+10); }
+  function xGas(i){ return PAD+i*(groupW+10)+barW+gap; }
+  return (
+    <svg width="100%" viewBox={"0 0 "+W2+" "+(H+18)} style={{display:"block",overflow:"visible"}}>
+      {[0,0.5,1].map(function(p){
+        return <line key={p} x1={PAD} y1={yOf(maxV*p)} x2={W2-PAD} y2={yOf(maxV*p)} stroke={T.border} strokeWidth={0.5} strokeDasharray="2,3"/>;
+      })}
+      {data.map(function(d,i){
+        var rh=Math.max((d.rec/maxV)*(H-PAD),2);
+        var gh=Math.max((d.gas/maxV)*(H-PAD),2);
+        var active=d.m===data[data.length-1].m;
+        return (
+          <g key={d.m}>
+            <rect x={xRec(i)} y={H-rh} width={barW} height={rh} rx={3} fill={T.green} opacity={active?1:.7}/>
+            <rect x={xGas(i)} y={H-gh} width={barW} height={gh} rx={3} fill={T.red} opacity={active?1:.7}/>
+            <text x={xRec(i)+barW} y={H+14} textAnchor="middle" fontSize={8} fill={T.muted}>
+              {MONTH_NAMES[(+d.m.slice(-2))-1]}
+            </text>
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
+function SavingsLineChart(props) {
+  var data=props.data, T=props.T, MONTH_NAMES=props.MONTH_NAMES;
+  if (!data || data.length === 0) {
+    return <div style={{textAlign:"center",padding:"20px 0",color:T.muted,fontSize:11}}>Sem dados</div>;
+  }
+  var W=300, H=60, PAD=10;
+  // taxa poupança = (rec - gas - inv) / rec * 100, clamp 0-100
+  var savings=[];
+  for(var i=0;i<data.length;i++){
+    var d=data[i];
+    var s=d.rec>0?Math.max(0,Math.min(100,(d.rec-d.gas-d.inv)/d.rec*100)):0;
+    savings.push(s);
+  }
+  var maxV=Math.max.apply(null,savings.concat([10]));
+  var n=data.length;
+  var pts=[];
+  for(var j=0;j<n;j++){
+    var x=PAD+j*(W-PAD*2)/(n>1?n-1:1);
+    var y=PAD+(1-savings[j]/maxV)*(H-PAD*2);
+    pts.push(x+","+y);
+  }
+  var target10=PAD+(1-10/maxV)*(H-PAD*2);
+  return (
+    <svg width="100%" viewBox={"0 0 "+W+" "+(H+18)} style={{display:"block",overflow:"visible"}}>
+      <line x1={PAD} y1={target10} x2={W-PAD} y2={target10} stroke={T.green} strokeWidth={0.8} strokeDasharray="4,3" opacity={0.5}/>
+      <text x={W-PAD} y={target10-3} textAnchor="end" fontSize={7} fill={T.green} opacity={0.7}>10%</text>
+      <polyline points={pts.join(" ")} fill="none" stroke={T.purple} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round"/>
+      {savings.map(function(s,i){
+        var x=PAD+i*(W-PAD*2)/(n>1?n-1:1);
+        var y=PAD+(1-s/maxV)*(H-PAD*2);
+        return (
+          <g key={i}>
+            <circle cx={x} cy={y} r={3} fill={s>=10?T.green:T.red} stroke={T.card} strokeWidth={1.5}/>
+            <text x={x} y={H+14} textAnchor="middle" fontSize={8} fill={T.muted}>
+              {MONTH_NAMES[(+data[i].m.slice(-2))-1]}
+            </text>
+            <text x={x} y={y-6} textAnchor="middle" fontSize={7} fill={s>=10?T.green:T.red} fontWeight="700">
+              {s.toFixed(0)+"%"}
+            </text>
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
 function LineChart(props) {
   var data=props.data, T=props.T, MONTH_NAMES=props.MONTH_NAMES;
   var dashPeriod=props.dashPeriod, setDashPeriod=props.setDashPeriod, isMobile=props.isMobile;
@@ -652,7 +740,7 @@ function PatrimonioView({ onAddAtivo, isMobile }) {
     </div>
 
     {/* KPIs topo */}
-    <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr 1fr":"repeat(4,1fr)",gap:10,marginBottom:14}}>
+    <div style={{display:"flex",gap:10,marginBottom:14,overflowX:"auto"}}>
       {[
         { label:"Patrimônio Bruto", val:totalGeral, color:T.green, icon:"◈" },
         { label:"Dívidas Ativas", val:totalDividas, color:T.red, icon:"↓" },
@@ -678,7 +766,7 @@ function PatrimonioView({ onAddAtivo, isMobile }) {
 
     {/* ── RESUMO ── */}
     {secao==="resumo"&&<>
-      <div style={{display:"grid",gridTemplateColumns:isMobile?"1fr":"1.5fr 1fr",gap:12}}>
+      <div style={{display:"flex",flexDirection:"column",gap:12}}>
         <div style={card}>
           <div style={{fontSize:13,fontWeight:700,marginBottom:14}}>Composição do Patrimônio</div>
           {[
@@ -1342,65 +1430,27 @@ function App(){
                 </div>
                 <LineChart data={barData} T={T} MONTH_NAMES={MONTH_NAMES} dashPeriod={dashPeriod} setDashPeriod={setDashPeriod} isMobile={isMobile}/>
               </div>
-              {/* Patrimônio por Classe — largura total */}
+                            {/* Gráfico de Barras — Receitas e Gastos por mês */}
               <div style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:14,padding:"14px 16px",marginBottom:10}}>
-                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:14}}>
-                    <div>
-                      <div style={{fontSize:13,fontWeight:700}}>Patrimônio por Classe</div>
-                      <div style={{fontSize:10,color:T.muted,marginTop:2}}>Posição atual</div>
-                    </div>
-                    <div>
-                      <div style={{fontSize:9,color:T.muted,textAlign:"right"}}>Total bruto</div>
-                      <div style={{fontSize:14,fontWeight:800,color:T.green,fontFamily:"'JetBrains Mono',monospace"}}>{fmtShort(patTotal)}</div>
-                    </div>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+                  <div style={{fontSize:12,fontWeight:700}}>Receitas vs Gastos</div>
+                  <div style={{display:"flex",gap:10,fontSize:9,color:T.muted}}>
+                    <span style={{display:"flex",alignItems:"center",gap:3}}><span style={{width:10,height:10,background:T.green,display:"inline-block",borderRadius:2}}/> Rec.</span>
+                    <span style={{display:"flex",alignItems:"center",gap:3}}><span style={{width:10,height:10,background:T.red,display:"inline-block",borderRadius:2}}/> Gas.</span>
                   </div>
-                  <div style={{display:"flex",flexDirection:"column",gap:9}}>
-                    {patrimoData.map((p,i)=>(
-                      <div key={i}>
-                        <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",fontSize:10,marginBottom:4}}>
-                          <span style={{fontWeight:600}}>{p.l}</span>
-                          <div style={{textAlign:"right"}}>
-                            <span style={{fontWeight:800,color:p.c,fontFamily:"'JetBrains Mono',monospace"}}>{fmtShort(p.v)}</span>
-                            <span style={{fontSize:8,color:T.muted,marginLeft:5}}>{(p.v/patTotal*100).toFixed(1)}%</span>
-                          </div>
-                        </div>
-                        <div style={{height:7,background:T.border,borderRadius:99}}>
-                          <div style={{height:"100%",width:`${(p.v/patMax)*100}%`,background:p.c,borderRadius:99,transition:"width .5s ease"}}/>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                </div>
+                <BarChartRecGas data={barData} T={T} MONTH_NAMES={MONTH_NAMES} isMobile={isMobile}/>
               </div>
 
-              {/* Saúde Financeira — largura total */}
+              {/* Gráfico de Linha — Taxa de Poupança % */}
               <div style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:14,padding:"14px 16px",marginBottom:10}}>
-                  <div style={{fontSize:13,fontWeight:700,marginBottom:2}}>Saúde Financeira</div>
-                  <div style={{fontSize:10,color:T.muted,marginBottom:16}}>{periodoLabel}</div>
-                  <div style={{display:"flex",flexDirection:"column",gap:16}}>
-                    {gaugeItems.map((g,i)=>{
-                      const displayPct=g.unit==="x"?Math.min(Math.abs(g.val)*50,100):Math.min(Math.abs(g.val),100);
-                      const targetPct=g.unit==="x"?Math.min(g.target*50,100):Math.min(g.target,100);
-                      return(
-                        <div key={i}>
-                          <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
-                            <div>
-                              <div style={{fontSize:11,fontWeight:600}}>{g.l}</div>
-                              <div style={{fontSize:9,color:T.muted}}>{g.desc}</div>
-                            </div>
-                            <div style={{textAlign:"right"}}>
-                              <div style={{fontSize:16,fontWeight:800,color:g.ok?g.c:T.red,fontFamily:"'JetBrains Mono',monospace",lineHeight:1}}>{g.val.toFixed(1)}{g.unit||"%"}</div>
-                              <div style={{fontSize:9,color:g.ok?T.green:T.red,fontWeight:700}}>{g.ok?"✓ OK":"✗ Atenção"}</div>
-                            </div>
-                          </div>
-                          <div style={{height:8,background:T.border,borderRadius:99,position:"relative",overflow:"hidden"}}>
-                            <div style={{position:"absolute",inset:0,width:`${displayPct}%`,background:g.ok?g.c:T.red,borderRadius:99,transition:"width .5s ease"}}/>
-                            <div style={{position:"absolute",top:0,bottom:0,left:`${targetPct}%`,width:2,background:"rgba(255,255,255,.4)"}}/>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+                  <div style={{fontSize:12,fontWeight:700}}>Taxa de Poupança Mensal</div>
+                  <div style={{fontSize:9,color:T.muted}}>Meta ≥ 10%</div>
+                </div>
+                <SavingsLineChart data={barData} T={T} MONTH_NAMES={MONTH_NAMES} isMobile={isMobile}/>
               </div>
+
 
               {/* Últimos lançamentos */}
               <div style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:16,padding:20}}>
@@ -1447,7 +1497,7 @@ function App(){
           </div>
           <div style={card}>
             <div style={{overflowX:"auto"}}>
-              <table style={{width:"100%",borderCollapse:"collapse",minWidth:700}}>
+              <table style={{width:"100%",borderCollapse:"collapse",width:"100%"}}>
                 <thead><tr>{["Data","Descrição","Categoria","Tipo","Fonte","Valor",""].map(h=>(
                   <th key={h} style={{textAlign:h==="Valor"?"right":"left",fontSize:9,fontWeight:700,color:T.muted,textTransform:"uppercase",letterSpacing:.7,paddingBottom:10,borderBottom:`1px solid ${T.border}`,padding:"0 6px 10px"}}>{h}</th>
                 ))}</tr></thead>
@@ -1478,7 +1528,7 @@ function App(){
         </>}
 
         {/* ─── PATRIMÔNIO ─── */}
-        {tab==="patrimonio"&&<PatrimonioView/>}
+        {tab==="patrimonio"&&<PatrimonioView isMobile={isMobile} onAddAtivo={()=>setModal("form")}/>}
 
         {/* ─── HISTÓRICO ─── */}
         {tab==="historico"&&<>
@@ -1522,7 +1572,7 @@ function App(){
           <div style={card}>
             <div style={{fontSize:13,fontWeight:700,marginBottom:12}}>Tabela Comparativa</div>
             <div style={{overflowX:"auto"}}>
-              <table style={{width:"100%",borderCollapse:"collapse",minWidth:600}}>
+              <table style={{width:"100%",borderCollapse:"collapse",width:"100%"}}>
                 <thead><tr>{["Período","Receitas","Gastos","Investimentos","Saldo","Δ vs Anterior"].map(h=>(
                   <th key={h} style={{textAlign:h==="Período"?"left":"right",fontSize:9,color:T.muted,textTransform:"uppercase",letterSpacing:.6,paddingBottom:10,borderBottom:`1px solid ${T.border}`,fontWeight:700,whiteSpace:"nowrap",padding:"0 6px 10px"}}>{h}</th>
                 ))}</tr></thead>
